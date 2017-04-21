@@ -1,0 +1,49 @@
+7
+7
+50
+10
+490000
+49
+1
+0
+0
+
+1
+100
+100
+1
+0.729844
+1.494
+30
+0
+0
+1
+50
+100
+0.01
+
+
+
+//////
+[100]     N (grid size)
+[100]     M (grid size)
+[50]      number of runs
+[1000]    Iterations (maximum)
+[3000]    Size of the Swarm (number of particles)
+[0]       algorithm: 1 - PSO; 2 - SS-PSO
+[0]       gbest? 0 - no; 1 - yes
+[0]       neighborhood: 0-Moore; 1 - VN
+
+[1]     Problem: 1 - Sphere; 2 - Rosenbrock; 3 - Rastrigin; 4 - Griewank; 5 - Schaffer
+[100]   Xmax
+[100]   Vmax
+[1]	chi
+[0.72]	omega
+[1.9]   c
+[30]    Number of Variables
+[0]     inertia Weight: 0 - fixed; 1 - TVIW (0.9--0.4)
+[0]     c strategy:     0 - fixed: 1 - TVAC-PSO
+[1]     assymetric initialization: 0 - NO; 1- YES
+[50]    Assymetric initialization: min
+[100]   Assymetric initialization: min
+[100]   stop criterion
