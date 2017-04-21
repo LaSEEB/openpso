@@ -9,8 +9,8 @@
 //These functions allocate memory for data structures.
 
 float **aloc_matrizf(int linhas , int colunas) {
-int i;
-float **matrix;
+	int i;
+	float **matrix;
 	matrix = (float **)malloc(linhas*sizeof(float));
 	for (i=0;i<linhas;i++) {
 		matrix[i] = (float *)malloc(colunas*sizeof(float));
@@ -23,7 +23,7 @@ float **matrix;
 }
 
 int **aloc_matrizi(int linhas , int colunas) {
-int i, **matrix;
+	int i, **matrix;
 	matrix = (int **)malloc(linhas*sizeof(int));
 	for (i=0;i<linhas;i++) {
 		matrix[i] = (int *)malloc(colunas*sizeof(int));
@@ -36,7 +36,7 @@ int i, **matrix;
 }
 
 int *aloc_vetori(int linhas) {
-int *vetor;
+	int *vetor;
 	vetor = (int *)malloc(linhas*sizeof(int));
 	if (!vetor) {
 		printf("Erro de alocacao de vetor de inteiros!\n");
@@ -57,7 +57,7 @@ long *aloc_vetorl(int linhas) {
 }
 
 float *aloc_vetorf(int linhas) {
-float *vetor;
+	float *vetor;
 	vetor = (float *)malloc(linhas*sizeof(float));
 	if (!vetor) {
 		printf("Erro de alocacao de vetor de floats!\n");
@@ -67,7 +67,7 @@ float *vetor;
 }
 
 long double *aloc_vetorld(int linhas) {
-long double *vetor;
+	long double *vetor;
 	vetor = (long double *)malloc(linhas*sizeof(long double));
 	if (!vetor) {
 		printf("Erro de alocacao de vetor de floats!\n");
@@ -77,14 +77,14 @@ long double *vetor;
 }
 
 void desaloc_matrizf(float **Matriz , int linhas) {
-int i;
+	int i;
 	for(i=0;i<linhas;i++) {
 		free(Matriz[i]);
 	}
 }
 
 void desaloc_matrizi(int **Matriz , int linhas) {
-int i;
+	int i;
 	for(i = 0; i < linhas; i++) {
 		free(Matriz[i]);
 	}

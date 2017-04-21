@@ -277,7 +277,7 @@ int main(int argc, char* argv[]) {
 	unsigned int i, w;
 	MODEL *pso;
 	unsigned int z;
-	unsigned int counter;
+	unsigned int counter = 0;
 	FILE *in1;
 	long double *averageBestsofar;
 	int flag;
