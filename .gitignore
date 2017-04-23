@@ -2,6 +2,5 @@
 *.gch
 SSPSO
 SSPSO.exe
-Makefile.win
 *.o
 build/
