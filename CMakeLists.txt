@@ -9,9 +9,13 @@ if(MINGW)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
 endif()
 
+add_definitions("-DMT_GENERATE_CODE_IN_HEADER=0")
+
 # Additional include directories
-#include_directories()
+add_subdirectory(libs)
+
+include_directories(libs/mtwist)
 
 # Create executable
 add_executable(${PROJECT_NAME} main.c aloca.c functions.c)
-target_link_libraries(${PROJECT_NAME}  m)
+target_link_libraries(${PROJECT_NAME} m mtwist)

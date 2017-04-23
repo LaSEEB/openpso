@@ -13,6 +13,9 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "randistrs.h"
+#include "mtwist.h"
+
 #include "definicoes.h"
 #include "aloca.h"
 #include "functions.h"
@@ -70,11 +73,13 @@ int parametros, semilla, pausa;
 /////RANDOM NUMBERS AND MATH FUNCTIONS
 ////////////////////////////////////////////////////////////
 long double	real_al_entre_a_b(long double a,long double b) {
-	return  a+(rand()*(b-a)) / (pow(2.0,15.0)-1.0);
+	//return  a+(rand()*(b-a)) / (pow(2.0,15.0)-1.0);
+	return rd_luniform((double) a, (double) b);
 }
 ////////////////////////////////////////////////////////////
 long aleatorio_entre_a_b(long double a,long double b) {
-	return	(long) floor(a+(rand()*(b+1-a)) / (pow(2.0,15.0)));
+	//return	(long) floor(a+(rand()*(b+1-a)) / (pow(2.0,15.0)));
+	return rd_liuniform((long long) a, (long long) b);
 }
 ////////////////////////////////////////////////////////////
 double square(float x) {
@@ -307,6 +312,9 @@ int main(int argc, char* argv[]) {
 	fscanf(in1,"%f", &crit);
 	fclose (in1);
 	//////////////////////////////
+
+	mt_seed32new(1234);
+
 	averageBestsofar = aloc_vetorld(50000);
 	for (i = 0;      i < 50000;           ++i)
 		averageBestsofar[i] = 0.0;
