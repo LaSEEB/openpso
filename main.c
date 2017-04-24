@@ -2,27 +2,41 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-///////////////////////////////////////////////////////
-// SS-PSO
-// Carlos Fernandes
-// Nuno Fachada
+ /**
+  * @file
+  * Implementation of Steady-State Particle Swarm Optimization (SSPSO).
+  *
+  * @author Carlos Fernandes
+  * @author Nuno Fachada
+  */
 
-//#include <malloc.h>
+// System libraries
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <math.h>
 
+// Local libraries
 #include "randistrs.h"
 #include "mtwist.h"
 
+// SSPSO headers
 #include "definicoes.h"
 #include "aloca.h"
 #include "functions.h"
 
+// Constants
+#define DEFAULT_INPUT_FILE "INPUT.txt"
+#define DEFAULT_PRNG_SEED 1234
+
 // *************** Global Variables *****************
 
-// System's parameters
+/// Seed for pseudo-random number generator.
+unsigned int prng_seed;
+/// File containing PSO parameters.
+char * input_file;
+
+// PSO parameters
 
 int max_x, max_y;
 // habitat x*y
@@ -69,24 +83,19 @@ int iWeightStrategy,cStrategy;
 //
 int parametros, semilla, pausa;
 
-
-/////RANDOM NUMBERS AND MATH FUNCTIONS
-////////////////////////////////////////////////////////////
-long double	real_al_entre_a_b(long double a,long double b) {
-	//return  a+(rand()*(b-a)) / (pow(2.0,15.0)-1.0);
-	return rd_luniform((double) a, (double) b);
-}
-////////////////////////////////////////////////////////////
-long aleatorio_entre_a_b(long double a,long double b) {
-	//return	(long) floor(a+(rand()*(b+1-a)) / (pow(2.0,15.0)));
-	return rd_liuniform((long long) a, (long long) b);
-}
-////////////////////////////////////////////////////////////
-double square(float x) {
-	return (x*x);
-}
 /////////////////////////////////////////////////////////////
 
+/**
+ * Macro for terminating program with error condition.
+ *
+ * @param[in] err_msg Error message.
+ * @param[in] ... Message parameters.
+ */
+#define error_terminate(err_msg, ...) \
+	do { \
+		fprintf(stderr, err_msg, ##__VA_ARGS__); \
+		exit(EXIT_FAILURE); \
+	} while(0)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,8 +130,8 @@ void initialize(MODEL * pso) {
 		}
 
 		for (j = 0;  j < numberVariables;   ++j) {
-			pso->particle[i].position[j] = real_al_entre_a_b(xmin, xmax);
-			pso->particle[i].velocity[j] = real_al_entre_a_b(-Xmax, Xmax)*(0.5-real_al_entre_a_b(0,1.0));
+			pso->particle[i].position[j] = rd_luniform(xmin, xmax);
+			pso->particle[i].velocity[j] = rd_luniform(-Xmax, Xmax)*(0.5-rd_luniform(0,1.0));
 			pso->particle[i].best_position_so_far[j] = pso->particle[i].position[j];
 			pso->particle[i].informants_best_position_so_far[j] = pso->particle[i].position[j];
 		}
@@ -205,8 +214,8 @@ void updateParticles (MODEL *pso, int i, unsigned int t) {
 		pi = pso->particle[i].best_position_so_far[j];
 		v = pso->particle[i].velocity[j];
 		x = pso->particle[i].position[j];
-		phi1 = real_al_entre_a_b (0.0, c1);
-		phi2 = real_al_entre_a_b (0.0, c2);
+		phi1 = rd_luniform(0.0, c1);
+		phi2 = rd_luniform(0.0, c2);
 		// Update Velocity
 		v = omega*v+(float)phi1*(pi-x)+(float)phi2*(pg-x);
 		if (v > Vmax) v = Vmax;
@@ -275,7 +284,72 @@ void move(unsigned int t, MODEL *pso) {
 	 }
 }
 
-//################################################################## MAIN ALGORITHM
+/**
+ * Parse command-line options and read PSO parameters from file.
+ *
+ * @param[in] argc Number of program arguments.
+ * @param[in] argv Program arguments. Argument at index 1 is the file containing
+ * the PSO parameters. Argument at index 2 is the PRNG seed.
+ * @return `EXIT_SUCCESS` if program executes successfully, `EXIT_FAILURE`
+ * otherwise.
+ */
+void parse_params(int argc, char * argv[]) {
+
+	// File pointer
+	FILE * fp;
+
+	// Did user specify a PSO parameter file?
+	if (argc >= 2)
+		input_file = argv[1];
+	else
+		input_file = DEFAULT_INPUT_FILE;
+
+	// Did user specify a PRNG seed?
+	if (argc >= 3)
+		prng_seed = atoi(argv[2]);
+	else
+		prng_seed = DEFAULT_PRNG_SEED;
+
+	// Try to open PSO parameters file
+	fp = fopen(input_file, "r");
+	if (!fp) error_terminate("Unable to open input file '%s'\n", input_file);
+
+	// Read PSO parameters file
+	fscanf(fp,"%d", &max_x);
+	fscanf(fp,"%d", &max_y);
+	fscanf(fp,"%d", &n_runs);
+	fscanf(fp,"%d", &max_t);
+	fscanf(fp,"%d", &max_evaluations);
+	fscanf(fp,"%d", &popSize);
+	fscanf(fp,"%d", &algorithm);
+	fscanf(fp,"%d", &gbest);
+	fscanf(fp,"%d", &neighborhood);
+	fscanf(fp,"%d", &problem);
+	fscanf(fp,"%f", &Xmax);
+	fscanf(fp,"%f", &Vmax);
+	fscanf(fp,"%f", &chi);
+	fscanf(fp,"%f", &omega);
+	fscanf(fp,"%f", &c);
+	fscanf(fp,"%u", &numberVariables);
+	fscanf(fp,"%d", &iWeightStrategy);
+	fscanf(fp,"%d", &cStrategy);
+	fscanf(fp,"%d", &assyInitialization);
+	fscanf(fp,"%f", &initialXmin);
+	fscanf(fp,"%f", &initialXmax);
+	fscanf(fp,"%f", &crit);
+	fclose(fp);
+
+}
+
+/**
+ * Algorithm starts here.
+ *
+ * @param[in] argc Number of program arguments.
+ * @param[in] argv Program arguments. Argument at index 1 is the file containing
+ * the PSO parameters. Argument at index 2 is the PRNG seed.
+ * @return `EXIT_SUCCESS` if program executes successfully, `EXIT_FAILURE`
+ * otherwise.
+ */
 int main(int argc, char* argv[]) {
 
 	FILE *out1;
@@ -283,37 +357,18 @@ int main(int argc, char* argv[]) {
 	MODEL *pso;
 	unsigned int z;
 	unsigned int counter = 0;
-	FILE *in1;
 	long double *averageBestsofar;
 	int flag;
-	// Read parameters ////////////
-	in1=fopen("INPUT.txt","r");
-	fscanf(in1,"%d", &max_x);
-	fscanf(in1,"%d", &max_y);
-	fscanf(in1,"%d", &n_runs);
-	fscanf(in1,"%d", &max_t);
-	fscanf(in1,"%d", &max_evaluations);
-	fscanf(in1,"%d", &popSize);
-	fscanf(in1,"%d", &algorithm);
-	fscanf(in1,"%d", &gbest);
-	fscanf(in1,"%d", &neighborhood);
-	fscanf(in1,"%d", &problem);
-	fscanf(in1,"%f", &Xmax);
-	fscanf(in1,"%f", &Vmax);
-	fscanf(in1,"%f", &chi);
-	fscanf(in1,"%f", &omega);
-	fscanf(in1,"%f", &c);
-	fscanf(in1,"%u", &numberVariables);
-	fscanf(in1,"%d", &iWeightStrategy);
-	fscanf(in1,"%d", &cStrategy);
-	fscanf(in1,"%d", &assyInitialization);
-	fscanf(in1,"%f", &initialXmin);
-	fscanf(in1,"%f", &initialXmax);
-	fscanf(in1,"%f", &crit);
-	fclose (in1);
-	//////////////////////////////
 
-	mt_seed32new(1234);
+	// Parse command-line arguments and read PSO parameter file.
+	parse_params(argc, argv);
+
+	// Show parameter information to user
+	printf("PSO parameter file : %s\n", input_file);
+	printf("PRNG seed          : %d\n", prng_seed);
+
+	// Set PRNG seed.
+	mt_seed32new(prng_seed);
 
 	averageBestsofar = aloc_vetorld(50000);
 	for (i = 0;      i < 50000;           ++i)
