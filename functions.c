@@ -133,7 +133,7 @@ long double Schwefel (PARTICLE position) {
 	return (fitness);
 }
 
-long double evaluate (PARTICLE position) {
+long double evaluate(PARTICLE position) {
 	long double fitness;
 	if (problem == 1)	fitness = Sphere(position);
 	if (problem == 2)   fitness = Rosenbrock(position);

@@ -406,12 +406,12 @@ void parse_params(int argc, char * argv[]) {
  */
 int main(int argc, char* argv[]) {
 
-	FILE *out1;
-	unsigned int i, w;
-	MODEL *pso;
+	FILE * out1;
+	unsigned int i;
+	MODEL * pso;
 	unsigned int z;
 	unsigned int counter = 0;
-	long double *averageBestsofar;
+	long double * averageBestSoFar;
 	int flag;
 
 	// Parse command-line arguments and read PSO parameter file.
@@ -424,11 +424,11 @@ int main(int argc, char* argv[]) {
 	// Set PRNG seed.
 	mt_seed32new(prng_seed);
 
-	averageBestsofar = aloc_vetorld(50000);
+	averageBestSoFar = aloc_vetorld(50000);
 	for (i = 0; i < 50000; ++i)
-		averageBestsofar[i] = 0.0;
+		averageBestSoFar[i] = 0.0;
 
-	for (w = 0; w < n_runs; ++w) {
+	for (i = 0; i < n_runs; ++i) {
 
 		// Create PSO model, set contents to zero
 		pso = (MODEL *) calloc(1, sizeof(MODEL));
@@ -445,8 +445,8 @@ int main(int argc, char* argv[]) {
 			printf ("\n best_so_far = %f", (float) pso->average_fitness);
 			move(z, pso);
 			if (pso->evaluations > counter * 100) {
-				averageBestsofar[counter] =
-					averageBestsofar[counter] +
+				averageBestSoFar[counter] =
+					averageBestSoFar[counter] +
 					pso->best_so_far / (long double) n_runs;
 				counter += 1;
 			}
@@ -472,10 +472,10 @@ int main(int argc, char* argv[]) {
 
 	out1 = fopen("AVE_BESTSOFAR.DAT", "a");
 	for (i = 1; i < counter + 1; ++i)
-		fprintf(out1,"%.40f\n", (float) averageBestsofar[i]);
+		fprintf(out1,"%.40f\n", (float) averageBestSoFar[i]);
 	fclose (out1);
 
-	free(averageBestsofar);
+	free(averageBestSoFar);
 
 	return 0;
 }
