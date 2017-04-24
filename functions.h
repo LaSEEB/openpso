@@ -10,14 +10,17 @@
 #include <math.h>
 #include "definicoes.h"
 
-long double Sphere(PARTICLE position);
-long double Rosenbrock(PARTICLE position);
-long double Rastrigin(PARTICLE position);
-long double Griewank(PARTICLE position);
-long double Ackley(PARTICLE position);
-long double Evaluate(PARTICLE position);
-long double weierstrass(PARTICLE position);
-long double Schwefel(PARTICLE position);
-long double Hyper(PARTICLE position);
-long double Quartic(PARTICLE position);
-long double evaluate(PARTICLE position);
+typedef long double (*SelFunc)(PARTICLE position, unsigned int nvars);
+
+long double Sphere(PARTICLE position, unsigned int nvars);
+long double Rosenbrock(PARTICLE position, unsigned int nvars);
+long double Rastrigin(PARTICLE position, unsigned int nvars);
+long double Griewank(PARTICLE position, unsigned int nvars);
+long double Ackley(PARTICLE position, unsigned int nvars);
+long double Evaluate(PARTICLE position, unsigned int nvars);
+long double weierstrass(PARTICLE position, unsigned int nvars);
+long double Schwefel(PARTICLE position, unsigned int nvars);
+long double Hyper(PARTICLE position, unsigned int nvars);
+long double Quartic(PARTICLE position, unsigned int nvars);
+
+SelFunc getSelFunc(unsigned int problem);

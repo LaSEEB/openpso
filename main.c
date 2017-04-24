@@ -24,7 +24,6 @@
 
 // SSPSO headers
 #include "definicoes.h"
-#include "aloca.h"
 #include "functions.h"
 
 // Constants
@@ -37,6 +36,8 @@
 static unsigned int prng_seed;
 /// File containing PSO parameters.
 static char * input_file;
+// Function/problem to solve
+static SelFunc evaluate;
 
 // PSO parameters
 
@@ -57,7 +58,7 @@ static int gbest;
 //
 static unsigned int neighborhood;
 //
-unsigned int problem;
+static unsigned int problem;
 //
 static double Xmax;
 //
@@ -69,7 +70,7 @@ static double omega;
 //
 static double c;
 //
-unsigned int numberVariables;
+static unsigned int numberVariables;
 //
 static unsigned int iWeightStrategy, cStrategy;
 //
@@ -80,19 +81,6 @@ static double initialXmin;
 static double initialXmax;
 //
 static double crit;
-
-/**
- * Macro for terminating program with error condition.
- *
- * @param[in] err_msg Error message.
- * @param[in] ... Message parameters.
- */
-#define ERROR_EXIT(err_msg, ...) \
-	do { \
-		fprintf(stderr, err_msg, ##__VA_ARGS__); \
-		exit(EXIT_FAILURE); \
-	} while(0)
-
 
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////// PARTICLE SWARM OPTIMIZATION    ///////////////////////
@@ -136,7 +124,8 @@ void initialize(MODEL * pso) {
 				pso->particle[i].position[j];
 		}
 
-		pso->particle[i].fitness = evaluate(pso->particle[i].position);
+		pso->particle[i].fitness =
+			evaluate(pso->particle[i].position, numberVariables);
 		pso->particle[i].best_fitness_so_far = pso->particle[i].fitness;
 		pso->particle[i].informants_best_fitness_so_far = pso->particle[i].fitness;
 	}
@@ -210,25 +199,32 @@ void updateParticles (MODEL *pso, int i, unsigned int t) {
 	maxIW = 0.9;
 	minIW = 0.4;
 	if (iWeightStrategy == 1)     // TVIW-PSO
-		omega = minIW+(maxIW-minIW)*(((float)max_t-(float)t)/(float)max_t);
+		omega =
+			minIW + (maxIW - minIW) * (((float)max_t-(float)t)/(float)max_t);
 	if (cStrategy == 1) {         //TVAC-PSO
-		c1 = (0.5-2.5)*((float)t/(float)max_t)+2.5;
-		c2 = (2.5-0.5)*((float)t/(float)max_t)+0.5;
+		c1 = (0.5 - 2.5) * ((float) t / (float) max_t) + 2.5;
+		c2 = (2.5 - 0.5) * ((float) t / (float) max_t) + 0.5;
 	}
-	for (j = 0;  j < numberVariables;    ++j) {
-		if (gbest == 0) pg = pso->particle[i].informants_best_position_so_far[j];
-		if (gbest == 1) pg = pso->best_position_so_far[j];
+	for (j = 0; j < numberVariables; ++j) {
+
+		if (gbest == 0)
+			pg = pso->particle[i].informants_best_position_so_far[j];
+		if (gbest == 1)
+			pg = pso->best_position_so_far[j];
+
 		pi = pso->particle[i].best_position_so_far[j];
 		v = pso->particle[i].velocity[j];
 		x = pso->particle[i].position[j];
 		phi1 = rd_luniform(0.0, c1);
 		phi2 = rd_luniform(0.0, c2);
+
 		// Update Velocity
-		v = omega*v+(float)phi1*(pi-x)+(float)phi2*(pg-x);
+		v = omega * v + (float) phi1 * (pi - x) + (float) phi2 * (pg - x);
 		if (v > Vmax) v = Vmax;
 		if (v < -Vmax) v = -Vmax;
+
 		// Update Position
-		x = x+v;
+		x = x + v;
 		if (x > Xmax) {
 			x = Xmax;
 			v = 0;
@@ -240,12 +236,18 @@ void updateParticles (MODEL *pso, int i, unsigned int t) {
 		pso->particle[i].position[j] = x;
 		pso->particle[i].velocity[j] = v;
 	}
-	pso->particle[i].fitness = evaluate (pso->particle[i].position);
-	pso->evaluations = pso->evaluations+1;
-	if (pso->evaluations == 49000 || pso->evaluations == 147000 || pso->evaluations == 294000 || pso->evaluations == 490000) {
-		out1=fopen("INTERMEDIARY.DAT","a");
-		fprintf(out1,"%.50f\t", (float)pso->best_so_far);
+	pso->particle[i].fitness =
+		evaluate(pso->particle[i].position, numberVariables);
+	pso->evaluations = pso->evaluations + 1;
+	if (pso->evaluations == 49000 ||
+			pso->evaluations == 147000 ||
+			pso->evaluations == 294000 ||
+			pso->evaluations == 490000) {
+
+		out1 = fopen("INTERMEDIARY.DAT", "a");
+		fprintf(out1, "%.50f\t", (float) pso->best_so_far);
 		fclose (out1);
+
 	}
 }
 // END PARTICLE SWARM OPTIMIZATION
@@ -256,38 +258,60 @@ void move(unsigned int t, MODEL *pso) {
 	int a, i, j, ii, jj;
 	unsigned int z;
 	int minx, maxx, miny, maxy;
-	int neighborAnt;
+	int neighParticle;
 	int update;
 	for (a = 0; a < (int) popSize; ++a) {
 		update = 0;
-		minx = pso->particle[a].x-1;
-		miny = pso->particle[a].y-1;
-		maxx = pso->particle[a].x+1;
-		maxy = pso->particle[a].y+1;
+		minx = pso->particle[a].x - 1;
+		miny = pso->particle[a].y - 1;
+		maxx = pso->particle[a].x + 1;
+		maxy = pso->particle[a].y + 1;
+
 		for (i = minx; i <= maxx; ++i) {
+
 			for (j = miny; j <= maxy; ++j) {
+
 				ii = i;
 				jj = j;
-				if (i < 0)      ii = max_x - 1;
-				if (i >= (int) max_x) ii = 0;
-				if (j < 0)      jj = max_y - 1;
-				if (j >= (int) max_y) jj = 0;
+				if (i < 0)
+					ii = max_x - 1;
+				if (i >= (int) max_x)
+					ii = 0;
+				if (j < 0)
+					jj = max_y - 1;
+				if (j >= (int) max_y)
+					jj = 0;
+
 				// Updates best neighbor
-				if (neighborhood == 0 || (i == minx+1 && j == miny+1) || (i == minx+1 && j == miny) || (i == minx && j == miny+1) || (i == minx+1 && j == maxy) || (i == maxx && j == miny+1)) {
-					if (pso->cell[ii][jj].particle == pso->worst_id) // the worst ant is a neighbor
-						update = 1;    // mark particle for updating; used for SS-PSO
-					neighborAnt = pso->cell[ii][jj].particle;
-					if (pso->particle[neighborAnt].best_fitness_so_far < pso->particle[a].informants_best_fitness_so_far) {
-						pso->particle[a].informants_best_fitness_so_far = pso->particle[neighborAnt].best_fitness_so_far;
+				if (neighborhood == 0 ||
+						(i == minx + 1 && j == miny + 1) ||
+						(i == minx + 1 && j == miny) ||
+						(i == minx && j == miny + 1) ||
+						(i == minx + 1 && j == maxy) ||
+						(i == maxx && j == miny + 1)) {
+
+					if (pso->cell[ii][jj].particle == pso->worst_id)
+						// the worst particle is a neighbor
+						update = 1; // mark particle for updating (for SS-PSO)
+
+					neighParticle = pso->cell[ii][jj].particle;
+					if (pso->particle[neighParticle].best_fitness_so_far <
+							pso->particle[a].informants_best_fitness_so_far) {
+						pso->particle[a].informants_best_fitness_so_far =
+							pso->particle[neighParticle].best_fitness_so_far;
 						for (z = 0; z < numberVariables; ++z)
-							pso->particle[a].informants_best_position_so_far[z] = pso->particle[neighborAnt].best_position_so_far[z];
+							pso->particle[a].informants_best_position_so_far[z] =
+								pso->particle[neighParticle].best_position_so_far[z];
 					}
 				}
 		   }
 		}
+
 		if (algorithm == 1)
-			updateParticles (pso, a, t);
-		if (algorithm == 2 && update == 1) // new PSO; only the worst and its neigbobors are updated
+			updateParticles(pso, a, t);
+
+		if ((algorithm == 2) && (update == 1))
+			// new PSO; only the worst and its neigbobors are updated
 			updateParticles (pso, a, t);
 	 }
 }
@@ -424,7 +448,10 @@ int main(int argc, char* argv[]) {
 	// Set PRNG seed.
 	mt_seed32new(prng_seed);
 
-	averageBestSoFar = aloc_vetorld(50000);
+	// Set function/problem to optimize
+	evaluate = getSelFunc(problem);
+
+	averageBestSoFar = malloc(50000 * sizeof(long double));
 	for (i = 0; i < 50000; ++i)
 		averageBestSoFar[i] = 0.0;
 

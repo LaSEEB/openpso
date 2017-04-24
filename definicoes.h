@@ -52,4 +52,17 @@ typedef struct {
 	//int worst_so_far_id;
 } MODEL;
 
+
+/**
+ * Macro for terminating program with error condition.
+ *
+ * @param[in] err_msg Error message.
+ * @param[in] ... Message parameters.
+ */
+#define ERROR_EXIT(err_msg, ...) \
+	do { \
+		fprintf(stderr, err_msg, ##__VA_ARGS__); \
+		exit(EXIT_FAILURE); \
+	} while(0)
+
 #endif

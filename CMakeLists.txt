@@ -17,5 +17,5 @@ add_subdirectory(libs)
 include_directories(libs/mtwist libs/iniparser)
 
 # Create executable
-add_executable(${PROJECT_NAME} main.c aloca.c functions.c)
+add_executable(${PROJECT_NAME} main.c functions.c)
 target_link_libraries(${PROJECT_NAME} m mtwist iniparser)
