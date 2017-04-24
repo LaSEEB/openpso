@@ -30,7 +30,7 @@ typedef struct {
 typedef INDIVIDUAL SWARM[MAX_POP_SIZE];
 
 typedef struct {
-    int particle;		   // if ocupied, ant is the id, else, -1
+    int particle; // if ocupied, particle is the id, else, -1
 } HABITAT;
 
 typedef HABITAT CELL[MAX_X][MAX_Y];
@@ -46,10 +46,10 @@ typedef struct {
 	long double best_fitness;
     long double best_so_far;
 	long double worst_fitness;
-	long double worst_so_far;
+	//long double worst_so_far;
 	int best_so_far_id;
     int worst_id;
-	int worst_so_far_id;
+	//int worst_so_far_id;
 } MODEL;
 
 #endif

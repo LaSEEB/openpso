@@ -28,65 +28,58 @@
 #include "functions.h"
 
 // Constants
-#define DEFAULT_INPUT_FILE "INPUT.txt"
+#define DEFAULT_INPUT_FILE "input.ini"
 #define DEFAULT_PRNG_SEED 1234
 
 // *************** Global Variables *****************
 
 /// Seed for pseudo-random number generator.
-unsigned int prng_seed;
+static unsigned int prng_seed;
 /// File containing PSO parameters.
-char * input_file;
+static char * input_file;
 
 // PSO parameters
 
-unsigned int max_x, max_y;
-// habitat x*y
-unsigned int max_t;
-// Maximum number of iterations
-unsigned int max_evaluations;
+//
+static unsigned int max_x, max_y;
+//Maximum number of iterations
+static unsigned int max_t;
+// Maximum number of evaluations
+static unsigned int max_evaluations;
 // Population size
-unsigned int popSize;
-// Number of particles in the swarm at time t=0
-unsigned int n_runs;
-// Array used to check the occupation of each ant' surroundig sites
-unsigned int position[8][2];
-// run PSO on the structure
-unsigned int algorithm;
+static unsigned int popSize;
+// Number of runs
+static unsigned int n_runs;
+// PSO algorithm to use
+static unsigned int algorithm;
 //
-int gbest;
+static int gbest;
 //
-unsigned int neighborhood;
+static unsigned int neighborhood;
 //
 unsigned int problem;
 //
-double Xmax;
+static double Xmax;
 //
-double Vmax;
+static double Vmax;
 //
-double chi;
+static double chi;
 //
-double omega;
+static double omega;
 //
-double c;
+static double c;
 //
 unsigned int numberVariables;
 //
-unsigned int iWeightStrategy, cStrategy;
+static unsigned int iWeightStrategy, cStrategy;
 //
-int assyInitialization;
+static int assyInitialization;
 //
-double initialXmin;
+static double initialXmin;
 //
-double initialXmax;
+static double initialXmax;
 //
-double crit;
-
-
-//
-int parametros, semilla, pausa;
-
-/////////////////////////////////////////////////////////////
+static double crit;
 
 /**
  * Macro for terminating program with error condition.
@@ -101,9 +94,9 @@ int parametros, semilla, pausa;
 	} while(0)
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////// PARTICLE SWARM OPTIMIZATION    ////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+/////////////////////////// PARTICLE SWARM OPTIMIZATION    ///////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 void initialize(MODEL * pso) {
 
 	unsigned int i, j, z;
@@ -115,28 +108,32 @@ void initialize(MODEL * pso) {
 			pso->cell[i][j].particle = z;
 			pso->particle[z].x = i;
 			pso->particle[z].y = j;
-			z = z+1;
+			z = z + 1;
 		}
 	}
 
 	//Initialize Position and Velocity
-	for (i = 0;  i < popSize;    ++i) {
+	for (i = 0; i < popSize; ++i) {
 
 		if (assyInitialization == 1) {
 			// Assymetric initialization of the population
-		   xmin = initialXmin;
-		   xmax = initialXmax;
+			xmin = initialXmin;
+			xmax = initialXmax;
 		} else {
 			// Normal initialization
-			 xmin = -Xmax;
-			 xmax = Xmax;
+			xmin = -Xmax;
+			xmax = Xmax;
 		}
 
-		for (j = 0;  j < numberVariables;   ++j) {
-			pso->particle[i].position[j] = rd_luniform(xmin, xmax);
-			pso->particle[i].velocity[j] = rd_luniform(-Xmax, Xmax)*(0.5-rd_luniform(0,1.0));
-			pso->particle[i].best_position_so_far[j] = pso->particle[i].position[j];
-			pso->particle[i].informants_best_position_so_far[j] = pso->particle[i].position[j];
+		for (j = 0;  j < numberVariables; ++j) {
+			pso->particle[i].position[j] =
+				rd_luniform(xmin, xmax);
+			pso->particle[i].velocity[j] =
+				rd_luniform(-Xmax, Xmax)*(0.5-rd_luniform(0,1.0));
+			pso->particle[i].best_position_so_far[j] =
+				pso->particle[i].position[j];
+			pso->particle[i].informants_best_position_so_far[j] =
+				pso->particle[i].position[j];
 		}
 
 		pso->particle[i].fitness = evaluate(pso->particle[i].position);
@@ -147,6 +144,7 @@ void initialize(MODEL * pso) {
 	pso->best_so_far_id = 0;
 	pso->evaluations = 0;
 	pso->minFitness = pso->particle[0].fitness;
+	pso->worst_id = 0;
 
 }
 
@@ -160,36 +158,42 @@ void updatePopulationData (MODEL *pso) {
 	for (i = 0; i < popSize; ++i) {
 		// Updates worst in population
 		if (pso->particle[i].fitness > pso->worst_fitness) {
-		   pso->worst_fitness = pso->particle[i].fitness;
-		   pso->worst_id = i;
+			pso->worst_fitness = pso->particle[i].fitness;
+			pso->worst_id = i;
 		}
 		// Updates best_so_far in population
 		if (pso->particle[i].fitness < pso->best_so_far) {
-		   pso->best_so_far = pso->particle[i].fitness;
-		   for (j = 0;   j < numberVariables;   ++j)
-			   pso->best_position_so_far[j] = pso->particle[i].position[j];
+			pso->best_so_far = pso->particle[i].fitness;
+			for (j = 0;   j < numberVariables;   ++j)
+				pso->best_position_so_far[j] = pso->particle[i].position[j];
 		}
 		// Updates best in current population
 		if (pso->particle[i].fitness < pso->best_fitness) {
-		   pso->best_fitness = pso->particle[i].fitness;
-		   for (j = 0;   j < numberVariables;   ++j)
-			   pso->best_position[j] = pso->particle[i].position[j];
+			pso->best_fitness = pso->particle[i].fitness;
+			for (j = 0;   j < numberVariables;   ++j)
+				pso->best_position[j] = pso->particle[i].position[j];
 		}
 		// Updates particle's best position
 		if (pso->particle[i].fitness < pso->particle[i].best_fitness_so_far) {
-		   pso->particle[i].best_fitness_so_far = pso->particle[i].fitness;
-		   for (j = 0;  j < numberVariables;  ++j)
-			   pso->particle[i].best_position_so_far[j] = pso->particle[i].position[j];
+			pso->particle[i].best_fitness_so_far = pso->particle[i].fitness;
+			for (j = 0;  j < numberVariables;  ++j)
+				pso->particle[i].best_position_so_far[j] =
+				pso->particle[i].position[j];
 		}
 		// Updates best informant
-		if (pso->particle[i].fitness < pso->particle[i].informants_best_fitness_so_far) {
-		   pso->particle[i].informants_best_fitness_so_far = pso->particle[i].fitness;
-		   for (j = 0;  j < numberVariables;   ++j)
-			   pso->particle[i].informants_best_position_so_far[j] = pso->particle[i].position[j];
+		if (pso->particle[i].fitness <
+				pso->particle[i].informants_best_fitness_so_far) {
+
+			pso->particle[i].informants_best_fitness_so_far =
+				pso->particle[i].fitness;
+			for (j = 0; j < numberVariables; ++j)
+				pso->particle[i].informants_best_position_so_far[j] =
+					pso->particle[i].position[j];
+
 		}
-		pso->average_fitness = pso->average_fitness+pso->particle[i].fitness;
+		pso->average_fitness = pso->average_fitness + pso->particle[i].fitness;
 	}
-	pso->average_fitness = pso->average_fitness/popSize;
+	pso->average_fitness = pso->average_fitness / popSize;
 }
 
 /////////////////////////////////////
@@ -421,48 +425,57 @@ int main(int argc, char* argv[]) {
 	mt_seed32new(prng_seed);
 
 	averageBestsofar = aloc_vetorld(50000);
-	for (i = 0;      i < 50000;           ++i)
+	for (i = 0; i < 50000; ++i)
 		averageBestsofar[i] = 0.0;
-	for (w = 0;   w < n_runs;   ++w) {
-	   if((pso = (MODEL *) calloc(1,sizeof(MODEL))) == NULL) {
-			printf("\nERROR: Out of Memory");
-			exit(0);
-		}
+
+	for (w = 0; w < n_runs; ++w) {
+
+		// Create PSO model, set contents to zero
+		pso = (MODEL *) calloc(1, sizeof(MODEL));
+
 		flag = 0;
 		z = 0;
 		counter = 0;
 		initialize(pso);
+
 		// *************** MAIN CYCLE *****************
 		do {
-			z = z+1;
-			updatePopulationData (pso);
-			printf ("\n best_so_far = %f", (float)pso->average_fitness);
+			z = z + 1;
+			updatePopulationData(pso);
+			printf ("\n best_so_far = %f", (float) pso->average_fitness);
 			move(z, pso);
 			if (pso->evaluations > counter * 100) {
-			   averageBestsofar[counter] = averageBestsofar[counter]+pso->best_so_far/(long double)n_runs;
-			   counter = counter+1;
+				averageBestsofar[counter] =
+					averageBestsofar[counter] +
+					pso->best_so_far / (long double) n_runs;
+				counter += 1;
 			}
-			if (pso->best_so_far < crit && flag == 0) {
-				out1=fopen("AES.DAT","a");
-				fprintf(out1,"\n%d", pso->evaluations);
-				fclose (out1);
+			if ((pso->best_so_far < crit) && (flag == 0)) {
+				out1 = fopen("AES.DAT", "a");
+				fprintf(out1, "\n%d", pso->evaluations);
+				fclose(out1);
 				flag = 1;
 			}
 		} while (pso->evaluations < max_evaluations);
-		out1=fopen("INTERMEDIARY.DAT","a");
-		fprintf(out1,"\n");
+
+		out1 = fopen("INTERMEDIARY.DAT", "a");
+		fprintf(out1, "\n");
 		fclose (out1);
-		out1=fopen("FINAL.DAT","a");
-		fprintf(out1,"%.45f\n", (float)pso->best_so_far);
-		fclose (out1);
+
+		out1 = fopen("FINAL.DAT", "a");
+		fprintf(out1, "%.45f\n", (float) pso->best_so_far);
+		fclose(out1);
+
 		//getch();
-		free (pso);
+		free(pso);
 	}
-	out1=fopen("AVE_BESTSOFAR.DAT","a");
-	for (i = 1;	i < counter+1;	++i)
-	   fprintf(out1,"%.40f\n", (float)averageBestsofar[i]);
+
+	out1 = fopen("AVE_BESTSOFAR.DAT", "a");
+	for (i = 1; i < counter + 1; ++i)
+		fprintf(out1,"%.40f\n", (float) averageBestsofar[i]);
 	fclose (out1);
+
 	free(averageBestsofar);
+
 	return 0;
-} // main
-/////////////////////////////////////////////////////// END PSO ALGORITHM
+}
