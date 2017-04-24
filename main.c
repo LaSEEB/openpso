@@ -15,10 +15,12 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <math.h>
+#include <float.h>
 
 // Local libraries
 #include "randistrs.h"
 #include "mtwist.h"
+#include "iniparser.h"
 
 // SSPSO headers
 #include "definicoes.h"
@@ -38,48 +40,49 @@ char * input_file;
 
 // PSO parameters
 
-int max_x, max_y;
+unsigned int max_x, max_y;
 // habitat x*y
-int max_t;
+unsigned int max_t;
 // Maximum number of iterations
 unsigned int max_evaluations;
 // Population size
-int popSize;
+unsigned int popSize;
 // Number of particles in the swarm at time t=0
 unsigned int n_runs;
 // Array used to check the occupation of each ant' surroundig sites
-// ? Run Bak-Sneppen model on the structure
-int position[8][2];
+unsigned int position[8][2];
 // run PSO on the structure
-int algorithm;
+unsigned int algorithm;
 //
 int gbest;
 //
-int neighborhood;
+unsigned int neighborhood;
 //
-int problem;
+unsigned int problem;
 //
-float Xmax;
+double Xmax;
 //
-float Vmax;
+double Vmax;
 //
-float chi;
+double chi;
 //
-float omega;
+double omega;
 //
-float c;
+double c;
 //
-int numberVariables;
+unsigned int numberVariables;
+//
+unsigned int iWeightStrategy, cStrategy;
 //
 int assyInitialization;
 //
-float initialXmin;
+double initialXmin;
 //
-float initialXmax;
+double initialXmax;
 //
-float crit;
-//
-int iWeightStrategy,cStrategy;
+double crit;
+
+
 //
 int parametros, semilla, pausa;
 
@@ -91,7 +94,7 @@ int parametros, semilla, pausa;
  * @param[in] err_msg Error message.
  * @param[in] ... Message parameters.
  */
-#define error_terminate(err_msg, ...) \
+#define ERROR_EXIT(err_msg, ...) \
 	do { \
 		fprintf(stderr, err_msg, ##__VA_ARGS__); \
 		exit(EXIT_FAILURE); \
@@ -103,7 +106,7 @@ int parametros, semilla, pausa;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void initialize(MODEL * pso) {
 
-	int i,j, z;
+	unsigned int i, j, z;
 	float xmin, xmax;
 
 	z = 0;
@@ -150,11 +153,11 @@ void initialize(MODEL * pso) {
 ///////////////////////////////////
 void updatePopulationData (MODEL *pso) {
 
-	int i,j;
+	unsigned int i,j;
 	pso->best_fitness = pso->particle[0].fitness;
 	pso->worst_fitness = 0;
 	pso->average_fitness = 0;
-	for (i = 0;  i < popSize;     ++i) {
+	for (i = 0; i < popSize; ++i) {
 		// Updates worst in population
 		if (pso->particle[i].fitness > pso->worst_fitness) {
 		   pso->worst_fitness = pso->particle[i].fitness;
@@ -191,7 +194,7 @@ void updatePopulationData (MODEL *pso) {
 
 /////////////////////////////////////
 void updateParticles (MODEL *pso, int i, unsigned int t) {
-	int j;
+	unsigned int j;
 	float v, x;
 	float pi, pg;
 	long double phi1, phi2;
@@ -246,32 +249,33 @@ void updateParticles (MODEL *pso, int i, unsigned int t) {
 //////////////////////MOVE THE PARTICLES
 void move(unsigned int t, MODEL *pso) {
 
-	int i, a, j, ii, jj, z;
+	int a, i, j, ii, jj;
+	unsigned int z;
 	int minx, maxx, miny, maxy;
 	int neighborAnt;
 	int update;
-	 for (a = 0;   a < popSize;       ++a) {
-		 update = 0;
-		 minx = pso->particle[a].x-1;
-		 miny = pso->particle[a].y-1;
-		 maxx = pso->particle[a].x+1;
-		 maxy = pso->particle[a].y+1;
-		 for (i = minx;	i <= maxx;	++i) {
-			 for (j = miny;	j <= maxy;	++j) {
-				 ii = i;
-				 jj = j;
-				 if (i < 0)      ii = max_x-1;
-				 if (i >= max_x) ii = 0;
-				 if (j < 0)      jj = max_y-1;
-				 if (j >= max_y) jj = 0;
-				 // Updates best neighbor
-				 if (neighborhood == 0 || (i == minx+1 && j == miny+1) || (i == minx+1 && j == miny) || (i == minx && j == miny+1) || (i == minx+1 && j == maxy) || (i == maxx && j == miny+1)) {
+	for (a = 0; a < (int) popSize; ++a) {
+		update = 0;
+		minx = pso->particle[a].x-1;
+		miny = pso->particle[a].y-1;
+		maxx = pso->particle[a].x+1;
+		maxy = pso->particle[a].y+1;
+		for (i = minx; i <= maxx; ++i) {
+			for (j = miny; j <= maxy; ++j) {
+				ii = i;
+				jj = j;
+				if (i < 0)      ii = max_x - 1;
+				if (i >= (int) max_x) ii = 0;
+				if (j < 0)      jj = max_y - 1;
+				if (j >= (int) max_y) jj = 0;
+				// Updates best neighbor
+				if (neighborhood == 0 || (i == minx+1 && j == miny+1) || (i == minx+1 && j == miny) || (i == minx && j == miny+1) || (i == minx+1 && j == maxy) || (i == maxx && j == miny+1)) {
 					if (pso->cell[ii][jj].particle == pso->worst_id) // the worst ant is a neighbor
 						update = 1;    // mark particle for updating; used for SS-PSO
 					neighborAnt = pso->cell[ii][jj].particle;
 					if (pso->particle[neighborAnt].best_fitness_so_far < pso->particle[a].informants_best_fitness_so_far) {
 						pso->particle[a].informants_best_fitness_so_far = pso->particle[neighborAnt].best_fitness_so_far;
-						for (z = 0;   z < numberVariables; ++z)
+						for (z = 0; z < numberVariables; ++z)
 							pso->particle[a].informants_best_position_so_far[z] = pso->particle[neighborAnt].best_position_so_far[z];
 					}
 				}
@@ -295,8 +299,8 @@ void move(unsigned int t, MODEL *pso) {
  */
 void parse_params(int argc, char * argv[]) {
 
-	// File pointer
-	FILE * fp;
+	// INI object
+	dictionary * ini;
 
 	// Did user specify a PSO parameter file?
 	if (argc >= 2)
@@ -311,33 +315,79 @@ void parse_params(int argc, char * argv[]) {
 		prng_seed = DEFAULT_PRNG_SEED;
 
 	// Try to open PSO parameters file
-	fp = fopen(input_file, "r");
-	if (!fp) error_terminate("Unable to open input file '%s'\n", input_file);
+	ini = iniparser_load(input_file);
+	if (!ini) ERROR_EXIT("Unable to parse input file '%s'\n", input_file);
 
 	// Read PSO parameters file
-	fscanf(fp,"%d", &max_x);
-	fscanf(fp,"%d", &max_y);
-	fscanf(fp,"%d", &n_runs);
-	fscanf(fp,"%d", &max_t);
-	fscanf(fp,"%d", &max_evaluations);
-	fscanf(fp,"%d", &popSize);
-	fscanf(fp,"%d", &algorithm);
-	fscanf(fp,"%d", &gbest);
-	fscanf(fp,"%d", &neighborhood);
-	fscanf(fp,"%d", &problem);
-	fscanf(fp,"%f", &Xmax);
-	fscanf(fp,"%f", &Vmax);
-	fscanf(fp,"%f", &chi);
-	fscanf(fp,"%f", &omega);
-	fscanf(fp,"%f", &c);
-	fscanf(fp,"%u", &numberVariables);
-	fscanf(fp,"%d", &iWeightStrategy);
-	fscanf(fp,"%d", &cStrategy);
-	fscanf(fp,"%d", &assyInitialization);
-	fscanf(fp,"%f", &initialXmin);
-	fscanf(fp,"%f", &initialXmax);
-	fscanf(fp,"%f", &crit);
-	fclose(fp);
+	max_x = (unsigned int) iniparser_getint(ini, "pso:max_x", 0);
+	if (max_x < 1)
+		ERROR_EXIT("Invalid input parameter: max_x\n");
+	max_y = (unsigned int) iniparser_getint(ini, "pso:max_y", 0);
+	if (max_y < 1)
+		ERROR_EXIT("Invalid input parameter: max_y\n");
+	n_runs = (unsigned int) iniparser_getint(ini, "pso:n_runs", 0);
+	if (n_runs < 1)
+		ERROR_EXIT("Invalid input parameter: n_runs\n");
+	max_t = (unsigned int) iniparser_getint(ini, "pso:max_t", 0);
+	if (max_t < 1)
+		ERROR_EXIT("Invalid input parameter: max_t\n");
+	max_evaluations = (unsigned int) iniparser_getint(ini, "pso:max_evaluations", 0);
+	if (max_evaluations < 1)
+		ERROR_EXIT("Invalid input parameter: max_evaluations\n");
+	popSize = (unsigned int) iniparser_getint(ini, "pso:popsize", 0);
+	if (popSize < 1)
+		ERROR_EXIT("Invalid input parameter: popSize\n");
+	algorithm = (unsigned int) iniparser_getint(ini, "pso:algorithm", 0);
+	if ((algorithm < 1) || (algorithm > 2))
+		ERROR_EXIT("Invalid input parameter: algorithm\n");
+	gbest = iniparser_getboolean(ini, "pso:gbest", -1);
+	if (gbest == -1)
+		ERROR_EXIT("Invalid input parameter: gbest\n");
+	neighborhood = (unsigned int) iniparser_getint(ini, "pso:neighborhood", 2);
+	if (neighborhood == 2)
+		ERROR_EXIT("Invalid input parameter: neighborhood\n");
+	problem = (unsigned int) iniparser_getint(ini, "pso:problem", 0);
+	if ((problem < 1) || (problem > 10))
+		ERROR_EXIT("Invalid input parameter: problem\n");
+	Xmax = iniparser_getdouble(ini, "pso:xmax", -DBL_MAX);
+	if (Xmax < -DBL_MAX + 0.1)
+		ERROR_EXIT("Invalid input parameter: Xmax\n");
+	Vmax = iniparser_getdouble(ini, "pso:vmax", -DBL_MAX);
+	if (Vmax < -DBL_MAX + 0.1)
+		ERROR_EXIT("Invalid input parameter: Vmax\n");
+	chi = iniparser_getdouble(ini, "pso:chi", -DBL_MAX);
+	if (chi < -DBL_MAX + 0.1)
+		ERROR_EXIT("Invalid input parameter: chi\n");
+	omega = iniparser_getdouble(ini, "pso:omega", -DBL_MAX);
+	if (omega < -DBL_MAX + 0.1)
+		ERROR_EXIT("Invalid input parameter: omega\n");
+	c = iniparser_getdouble(ini, "pso:c", -DBL_MAX);
+	if (c < -DBL_MAX + 0.1)
+		ERROR_EXIT("Invalid input parameter: c\n");
+	numberVariables = (unsigned int) iniparser_getint(ini, "pso:numbervariables", 0);
+	if (numberVariables < 1)
+		ERROR_EXIT("Invalid input parameter: numberVariables\n");
+	iWeightStrategy = (unsigned int) iniparser_getint(ini, "pso:iweightstrategy", 2);
+	if (iWeightStrategy == 2)
+		ERROR_EXIT("Invalid input parameter: iWeightStrategy\n");
+	cStrategy = (unsigned int) iniparser_getint(ini, "pso:cstrategy", 2);
+	if (cStrategy == 2)
+		ERROR_EXIT("Invalid input parameter: cStrategy\n");
+	assyInitialization = iniparser_getboolean(ini, "pso:assyinitialization", -1);
+	if (assyInitialization == -1)
+		ERROR_EXIT("Invalid input parameter: assyInitialization\n");
+	initialXmin = iniparser_getdouble(ini, "pso:initialxmin", -DBL_MAX);
+	if (initialXmin < -DBL_MAX + 0.1)
+		ERROR_EXIT("Invalid input parameter: initialXmin\n");
+	initialXmax = iniparser_getdouble(ini, "pso:initialxmax", -DBL_MAX);
+	if (initialXmax < -DBL_MAX + 0.1)
+		ERROR_EXIT("Invalid input parameter: initialXmax\n");
+	crit = iniparser_getdouble(ini, "pso:crit", -DBL_MAX);
+	if (crit < -DBL_MAX + 0.1)
+		ERROR_EXIT("Invalid input parameter: crit\n");
+
+	// Release dictionary object
+	iniparser_freedict(ini);
 
 }
 
