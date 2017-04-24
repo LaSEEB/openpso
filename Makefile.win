@@ -4,11 +4,11 @@
 CPP      = g++.exe
 CC       = gcc.exe
 WINDRES  = windres.exe
-OBJ      = main.o aloca.o functions.o libs/mtwist/mtwist.o libs/mtwist/randistrs.o
-LINKOBJ  = main.o aloca.o functions.o libs/mtwist/mtwist.o libs/mtwist/randistrs.o
+OBJ      = main.o aloca.o functions.o libs/mtwist/mtwist.o libs/mtwist/randistrs.o libs/iniparser/dictionary.o libs/iniparser/iniparser.o
+LINKOBJ  = main.o aloca.o functions.o libs/mtwist/mtwist.o libs/mtwist/randistrs.o libs/iniparser/dictionary.o libs/iniparser/iniparser.o
 LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib" -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc
-INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"libs/mtwist"
-CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++" -I"libs/mtwist"
+INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"libs/mtwist" -I"libs/iniparser"
+CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++" -I"libs/mtwist" -I"libs/iniparser"
 BIN      = SSPSO.exe
 CXXFLAGS = $(CXXINCS) 
 CFLAGS   = $(INCS) 
@@ -38,3 +38,9 @@ libs/mtwist/mtwist.o: libs/mtwist/mtwist.c
 
 libs/mtwist/randistrs.o: libs/mtwist/randistrs.c
 	$(CC) -c libs/mtwist/randistrs.c -o libs/mtwist/randistrs.o $(CFLAGS)
+
+libs/iniparser/dictionary.o: libs/iniparser/dictionary.c
+	$(CC) -c libs/iniparser/dictionary.c -o libs/iniparser/dictionary.o $(CFLAGS)
+
+libs/iniparser/iniparser.o: libs/iniparser/iniparser.c
+	$(CC) -c libs/iniparser/iniparser.c -o libs/iniparser/iniparser.o $(CFLAGS)
