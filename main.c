@@ -92,7 +92,7 @@ static double crit;
  * @return `EXIT_SUCCESS` if program executes successfully, `EXIT_FAILURE`
  * otherwise.
  */
-void parse_params(int argc, char * argv[]) {
+static void parse_params(int argc, char * argv[]) {
 
 	// INI object
 	dictionary * ini;
@@ -191,7 +191,7 @@ void parse_params(int argc, char * argv[]) {
  *
  * @param[in,out] PSO model to initialize.
  */
-void initialize(MODEL * pso) {
+static void initialize(MODEL * pso) {
 
 	unsigned int i, j, z;
 	float xmin, xmax;
@@ -274,7 +274,7 @@ void initialize(MODEL * pso) {
  *
  * @param[in,out] PSO model to update.
  */
-void updatePopulationData(MODEL * pso) {
+static void updatePopulationData(MODEL * pso) {
 
 	// Aux. variables
 	unsigned int i;
@@ -337,8 +337,15 @@ void updatePopulationData(MODEL * pso) {
 	pso->average_fitness = pso->average_fitness / popSize;
 }
 
-/////////////////////////////////////
-void updateParticles(MODEL * pso, int i, unsigned int t) {
+/**
+ * Update a particle.
+ *
+ * @param[in,out] PSO model containing particles to update.
+ * @param[in] i Index of particle to update.
+ * @param[in] iter Iteration count for current run.
+ */
+static void updateParticles(MODEL * pso, int i, unsigned int iter) {
+
 	unsigned int j;
 	float v, x;
 	float pi, pg = 0.0;
@@ -350,18 +357,28 @@ void updateParticles(MODEL * pso, int i, unsigned int t) {
 	c2 = c;
 	maxIW = 0.9;
 	minIW = 0.4;
-	if (iWeightStrategy == 1)     // TVIW-PSO
-		omega =
-			minIW + (maxIW - minIW) * (((float)max_t-(float)t)/(float)max_t);
-	if (cStrategy == 1) {         //TVAC-PSO
-		c1 = (0.5 - 2.5) * ((float) t / (float) max_t) + 2.5;
-		c2 = (2.5 - 0.5) * ((float) t / (float) max_t) + 0.5;
+
+	// TVIW-PSO
+	if (iWeightStrategy == 1) {
+		omega = minIW + (maxIW - minIW) *
+			(((float) max_t - (float) iter) / (float) max_t);
 	}
+
+	//TVAC-PSO
+	if (cStrategy == 1) {
+		c1 = (0.5 - 2.5) * ((float) iter / (float) max_t) + 2.5;
+		c2 = (2.5 - 0.5) * ((float) iter / (float) max_t) + 0.5;
+	}
+
+	// Cycle through variables
 	for (j = 0; j < numberVariables; ++j) {
 
+		// Use local best or global best?
 		if (gbest == 0)
+			// Local best
 			pg = pso->particle[i].informants_best_position_so_far[j];
 		if (gbest == 1)
+			// Global best
 			pg = pso->best_position_so_far[j];
 
 		pi = pso->particle[i].best_position_so_far[j];
@@ -387,10 +404,15 @@ void updateParticles(MODEL * pso, int i, unsigned int t) {
 		}
 		pso->particle[i].position[j] = x;
 		pso->particle[i].velocity[j] = v;
-	}
+	} // Cycle variables
+
+	// Determine particle fitness
 	pso->particle[i].fitness =
 		evaluate(pso->particle[i].position, numberVariables);
-	pso->evaluations = pso->evaluations + 1;
+
+	// Increment number of evaluations
+	pso->evaluations += 1;
+
 	if (pso->evaluations == 49000 ||
 			pso->evaluations == 147000 ||
 			pso->evaluations == 294000 ||
@@ -402,27 +424,39 @@ void updateParticles(MODEL * pso, int i, unsigned int t) {
 
 	}
 }
-// END PARTICLE SWARM OPTIMIZATION
 
-//////////////////////MOVE THE PARTICLES
-void move(unsigned int t, MODEL *pso) {
+/**
+ * Move the particles.
+ *
+ * @param[in] iter Iteration count for current run.
+ * @param[in,out] pso PSO model containing particles to move.
+ */
+static void move(unsigned int iter, MODEL * pso) {
 
-	int a, i, j, ii, jj;
-	unsigned int z;
+	unsigned int a;
+	int i, j, ii, jj;
 	int minx, maxx, miny, maxy;
 	int neighParticle;
 	int update;
-	for (a = 0; a < (int) popSize; ++a) {
+
+	// Cycle through particles
+	for (a = 0; a < popSize; ++a) {
+
+		// By default particle update is set to 0 (only relevant to SS-PSO)
 		update = 0;
+
+		// Movement bounds for current particle
 		minx = pso->particle[a].x - 1;
 		miny = pso->particle[a].y - 1;
 		maxx = pso->particle[a].x + 1;
 		maxy = pso->particle[a].y + 1;
 
+		// Cycle through neighbors
 		for (i = minx; i <= maxx; ++i) {
 
 			for (j = miny; j <= maxy; ++j) {
 
+				// Adjust neighbors location according to toroidal topology
 				ii = i;
 				jj = j;
 				if (i < 0)
@@ -434,38 +468,54 @@ void move(unsigned int t, MODEL *pso) {
 				if (j >= (int) max_y)
 					jj = 0;
 
-				// Updates best neighbor
-				if (neighborhood == 0 ||
-						(i == minx + 1 && j == miny + 1) ||
-						(i == minx + 1 && j == miny) ||
-						(i == minx && j == miny + 1) ||
-						(i == minx + 1 && j == maxy) ||
-						(i == maxx && j == miny + 1)) {
+				// Update current particle with information provided by
+				// neighbors
+				if ((neighborhood == 0) || // Moore neighborhood
+						// Von Neumann neighborhood
+						((i == minx + 1) && (j == miny + 1)) ||
+						((i == minx + 1) && (j == miny)) ||
+						((i == minx) && (j == miny + 1)) ||
+						((i == minx + 1) && (j == maxy)) ||
+						((i == maxx) && (j == miny + 1))) {
 
-					if (pso->cell[ii][jj].particle == pso->worst_id)
-						// the worst particle is a neighbor
-						update = 1; // mark particle for updating (for SS-PSO)
-
+					// Get neighbor particle
 					neighParticle = pso->cell[ii][jj].particle;
+
+					// If a neighbor particle is the worst particle...
+					if (neighParticle == pso->worst_id)
+						// ...mark current particle for updating (SS-PSO only)
+						update = 1;
+
+					// Does the neighbor know of better fitness than current
+					// particle?
 					if (pso->particle[neighParticle].best_fitness_so_far <
 							pso->particle[a].informants_best_fitness_so_far) {
+
+						// If so, current particle will get that knowledge also
 						pso->particle[a].informants_best_fitness_so_far =
 							pso->particle[neighParticle].best_fitness_so_far;
-						for (z = 0; z < numberVariables; ++z)
-							pso->particle[a].informants_best_position_so_far[z] =
-								pso->particle[neighParticle].best_position_so_far[z];
+
+						memmove(
+							pso->particle[a].informants_best_position_so_far,
+							pso->particle[neighParticle].best_position_so_far,
+							numberVariables * sizeof(float));
 					}
+
 				}
-		   }
-		}
 
+			} // Cycle y
+
+		} // Cycle x
+
+		// Typical PSO update strategy: update all
 		if (algorithm == 1)
-			updateParticles(pso, a, t);
+			updateParticles(pso, a, iter);
 
+		// SS-PSO update strategy: only the worst and its neighbors are updated
 		if ((algorithm == 2) && (update == 1))
-			// new PSO; only the worst and its neighbors are updated
-			updateParticles (pso, a, t);
-	 }
+			updateParticles(pso, a, iter);
+
+	 } // Cycle particles
 }
 
 /**
@@ -482,7 +532,10 @@ int main(int argc, char* argv[]) {
 	FILE * out1;
 	unsigned int i;
 	MODEL * pso;
-	unsigned int z;
+
+	// Iteration count for current run
+	unsigned int iter;
+
 	unsigned int counter = 0;
 	long double * averageBestSoFar;
 	int flag;
@@ -514,20 +567,22 @@ int main(int argc, char* argv[]) {
 
 		// Aux. variables for current run
 		flag = 0;
-		z = 0;
+		iter = 0;
 		counter = 0;
 
 		// PSO main cycle for current run
 		// Keep cycle going until maximum number of evaluations is reached
 		do {
 
-			z = z + 1;
+			// Update iteration count for current run
+			iter += 1;
 
+			// Let particles know about best and worst fitness and determine
+			// average fitness
 			updatePopulationData(pso);
 
-			printf("\n best_so_far = %f", (float) pso->average_fitness);
-
-			move(z, pso);
+			// Move the particles
+			move(iter, pso);
 
 			if (pso->evaluations > counter * 100) {
 				averageBestSoFar[counter] =
@@ -544,6 +599,9 @@ int main(int argc, char* argv[]) {
 			}
 
 		} while (pso->evaluations < max_evaluations);
+
+		printf("Run %4u | BestFit = %10.5g | AvgFit = %10.5g\n",
+			i, (float) pso->best_fitness, (float) pso->average_fitness);
 
 		out1 = fopen("INTERMEDIARY.DAT", "a");
 		fprintf(out1, "\n");
