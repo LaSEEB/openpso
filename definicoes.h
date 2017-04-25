@@ -5,7 +5,7 @@
 #ifndef __definicoes_h_
 #define __definicoes_h_
 
-#include <assert.h>
+//#include <assert.h>
 
 #define MAX_POP_SIZE	8100
 #define MAX_X			100
