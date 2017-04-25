@@ -267,11 +267,17 @@ void initialize(MODEL * pso) {
 
 }
 
-///////////////////////////////////
-void updatePopulationData (MODEL * pso) {
+/**
+ * Update population data. Let particles know about particle with
+ * best and worst fitness in the population and calculate the average fitness
+ * in the population.
+ *
+ * @param[in,out] PSO model to update.
+ */
+void updatePopulationData(MODEL * pso) {
 
 	// Aux. variables
-	unsigned int i,j;
+	unsigned int i;
 
 	// Reset best and worst fitnesses
 	pso->best_fitness = pso->particle[0].fitness;
@@ -290,23 +296,26 @@ void updatePopulationData (MODEL * pso) {
 		// Updates best_so_far in population
 		if (pso->particle[i].fitness < pso->best_so_far) {
 			pso->best_so_far = pso->particle[i].fitness;
-			for (j = 0; j < numberVariables; ++j)
-				pso->best_position_so_far[j] = pso->particle[i].position[j];
+			memmove(pso->best_position_so_far,
+				pso->particle[i].position,
+				numberVariables * sizeof(float));
 		}
 
 		// Updates best in current population
 		if (pso->particle[i].fitness < pso->best_fitness) {
 			pso->best_fitness = pso->particle[i].fitness;
-			for (j = 0; j < numberVariables; ++j)
-				pso->best_position[j] = pso->particle[i].position[j];
+			memmove(pso->best_position,
+				pso->particle[i].position,
+				numberVariables * sizeof(float));
 		}
 
 		// Updates particle's best position
 		if (pso->particle[i].fitness < pso->particle[i].best_fitness_so_far) {
 			pso->particle[i].best_fitness_so_far = pso->particle[i].fitness;
-			for (j = 0; j < numberVariables; ++j)
-				pso->particle[i].best_position_so_far[j] =
-					pso->particle[i].position[j];
+			memmove(pso->particle[i].best_position_so_far,
+				pso->particle[i].position,
+				numberVariables * sizeof(float));
+
 		}
 
 		// Updates best informant
@@ -315,19 +324,21 @@ void updatePopulationData (MODEL * pso) {
 
 			pso->particle[i].informants_best_fitness_so_far =
 				pso->particle[i].fitness;
-			for (j = 0; j < numberVariables; ++j)
-				pso->particle[i].informants_best_position_so_far[j] =
-					pso->particle[i].position[j];
 
+			memmove(pso->particle[i].informants_best_position_so_far,
+				pso->particle[i].position,
+				numberVariables * sizeof(float));
 		}
 
 		pso->average_fitness = pso->average_fitness + pso->particle[i].fitness;
 	}
+
+	// Determine average fitness in the population
 	pso->average_fitness = pso->average_fitness / popSize;
 }
 
 /////////////////////////////////////
-void updateParticles (MODEL * pso, int i, unsigned int t) {
+void updateParticles(MODEL * pso, int i, unsigned int t) {
 	unsigned int j;
 	float v, x;
 	float pi, pg = 0.0;
