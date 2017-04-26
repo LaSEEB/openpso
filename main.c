@@ -559,6 +559,9 @@ static void move(unsigned int iter, MODEL * pso) {
  */
 int main(int argc, char* argv[]) {
 
+	// Parse command-line arguments and read PSO parameter file.
+	parse_params(argc, argv);
+
 	FILE * out1;
 	unsigned int i;
 	MODEL * pso;
@@ -567,11 +570,10 @@ int main(int argc, char* argv[]) {
 	unsigned int iter;
 
 	unsigned int counter = 0;
-	long double * averageBestSoFar;
+	long double averageBestSoFar[max_evaluations / 100];
+	unsigned int crit_evals[n_runs];
+	double best_so_far[n_runs];
 	int flag;
-
-	// Parse command-line arguments and read PSO parameter file.
-	parse_params(argc, argv);
 
 	// Show parameter information to user
 	printf("PSO parameter file : %s\n", input_file);
@@ -584,7 +586,7 @@ int main(int argc, char* argv[]) {
 	evaluate = getSelFunc(problem);
 
 	// Initialize averageBestSoFar array, set contents to zero
-	averageBestSoFar = (long double *) calloc(50000, sizeof(long double));
+	memset(averageBestSoFar, 0, max_evaluations / 100 * sizeof(long double));
 
 	// Perform PSO runs
 	for (i = 0; i < n_runs; ++i) {
@@ -614,21 +616,28 @@ int main(int argc, char* argv[]) {
 			// Move the particles
 			move(iter, pso);
 
+			// Is it time to update the average (between runs) best so far?
 			if (pso->evaluations > counter * 100) {
 				averageBestSoFar[counter] +=
 					pso->best_so_far / (long double) n_runs;
 				counter += 1;
 			}
 
+			// Is the best so far below the stop criteria? If so did we already
+			// saved the number of evaluations required to get below the
+			// stop criteria?
 			if ((pso->best_so_far < crit) && (flag == 0)) {
-				out1 = fopen("AES.DAT", "a");
-				fprintf(out1, "\n%d", pso->evaluations);
-				fclose(out1);
+				crit_evals[i] = pso->evaluations;
 				flag = 1;
 			}
 
 		} while (pso->evaluations < max_evaluations);
 
+		// If the number of evaluations was not enough to get below the stop
+		// criteria, set it to the maximum number of performed evaluations
+		if (flag == 0) crit_evals[i] = max_evaluations;
+
+		// Inform user of current run performance
 		printf("Run %4u | BestFit = %10.5g | AvgFit = %10.5g\n",
 			i, (float) pso->best_fitness, (float) pso->average_fitness);
 
@@ -636,20 +645,32 @@ int main(int argc, char* argv[]) {
 		fprintf(out1, "\n");
 		fclose (out1);
 
-		out1 = fopen("FINAL.DAT", "a");
-		fprintf(out1, "%.45f\n", (float) pso->best_so_far);
-		fclose(out1);
+		// Keep best so far for current run
+		best_so_far[i] = (double) pso->best_so_far;
 
 		// Release PSO model for current run
 		free(pso);
 	}
 
-	out1 = fopen("AVE_BESTSOFAR.DAT", "a");
-	for (i = 1; i < counter + 1; ++i)
-		fprintf(out1,"%.40f\n", (float) averageBestSoFar[i]);
+	// Save file containing the average (between runs) best so far fitness
+	// after 100, 200, ... evaluations.
+	out1 = fopen("AVE_BESTSOFAR.DAT", "w");
+	for (i = 0; i < counter; ++i)
+		fprintf(out1,"%.40g\n", (double) averageBestSoFar[i]);
 	fclose (out1);
 
-	free(averageBestSoFar);
+	// Save number of evaluations required for getting below stop criterion
+	out1 = fopen("AES.DAT", "w");
+	for (i = 0; i < n_runs; ++i)
+		fprintf(out1, "\n%d", crit_evals[i]);
+	fclose(out1);
 
-	return 0;
+	// Save best so far for each run
+	out1 = fopen("FINAL.DAT", "w");
+	for (i = 0; i < n_runs; ++i)
+		fprintf(out1, "%.45g\n", best_so_far[i]);
+	fclose(out1);
+
+	// End program successfully
+	return EXIT_SUCCESS;
 }
