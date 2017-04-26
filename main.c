@@ -40,7 +40,27 @@ static char input_file[MAX_FILENAME_LEN];
 // Function/problem to solve
 static SelFunc evaluate;
 // Neighbors
-static NEIGHBORHOOD neighbors;
+static const NEIGHBORHOOD * neighbors;
+static const NEIGHBORHOOD neighbors_moore = {
+	.num_neighs = 9,
+	.neighs = (NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 1}, {1, 0},
+		{1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}}};
+static const NEIGHBORHOOD neighbors_vn = {
+	.num_neighs = 5,
+	.neighs = (NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}};
+
+/*
+#define NEIGH_MOORE \
+	{{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 0},
+	{0, 1}, {1, -1}, {1, 0}, {1, 1}}
+
+	{{0, 0}, {0, 1}, {1, 1}, {1, 0}, {1, -1},
+	{0, -1}, {-1, -1}, {-1, 0}, {-1, 1}}
+#define NEIGH_MOORE_N 9
+#define NEIGH_VN
+	{{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}
+#define NEIGH_VN_N 5
+*/
 
 // PSO parameters
 
@@ -152,11 +172,9 @@ static void parse_params(int argc, char * argv[]) {
 	// Neighborhood
 	neighborhood = (unsigned int) iniparser_getint(ini, "pso:neighborhood", 2);
 	if (neighborhood == 0) { // Moore
-		neighbors.neighs = (const NEIGHBOR[]) NEIGH_MOORE;
-		neighbors.num_neighs = NEIGH_MOORE_N;
+		neighbors = &neighbors_moore;
 	} else if (neighborhood == 1) { // VN
-		neighbors.neighs = (const NEIGHBOR[]) NEIGH_VN;
-		neighbors.num_neighs = NEIGH_VN_N;
+		neighbors = &neighbors_vn;
 	} else {
 		ERROR_EXIT("Invalid input parameter: neighborhood\n");
 	}
@@ -484,10 +502,10 @@ static void move(unsigned int iter, MODEL * pso) {
 		//maxy = pso->particle[a].y + 1;
 
 		// Cycle through neighbors
-		for (n = 0; n < neighbors.num_neighs; ++n) {
+		for (n = 0; n < neighbors->num_neighs; ++n) {
 
-			i = pso->particle[a].x + neighbors.neighs[n].dx;
-			j = pso->particle[a].y + neighbors.neighs[n].dy;
+			i = pso->particle[a].x + neighbors->neighs[n].dx;
+			j = pso->particle[a].y + neighbors->neighs[n].dy;
 
 			// Adjust neighbors location according to toroidal topology
 			ii = i;
@@ -500,6 +518,8 @@ static void move(unsigned int iter, MODEL * pso) {
 				jj = max_y - 1;
 			if (j >= (int) max_y)
 				jj = 0;
+
+			//if ((iter == 1) && (a == 0)) printf("(%d, %d)=(%d, %d)", ii, jj, neighbors->neighs[n].dx, neighbors->neighs[n].dy);
 
 			// Get neighbor particle
 			neighParticle = pso->cell[ii][jj].particle;

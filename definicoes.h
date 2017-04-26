@@ -12,16 +12,6 @@
 #define MAX_Y			100
 #define MAX_VARIABLES   100
 
-#define NEIGH_MOORE \
-	{{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 0}, \
-	{0, 1}, {1, -1}, {1, 0}, {1, 1}}
-	//{{0, 0}, {0, 1}, {1, 1}, {1, 0}, {1, -1}, \
-	//{0, -1}, {-1, -1}, {-1, 0}, {-1, 1}}
-#define NEIGH_MOORE_N 9
-#define NEIGH_VN \
-	{{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}
-#define NEIGH_VN_N 5
-
 typedef struct {
 	int dx;
 	int dy;
