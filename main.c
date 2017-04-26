@@ -395,7 +395,7 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 	long double phi1, phi2;
 	float c1, c2;
 	float maxIW, minIW;
-	FILE * out1;
+	FILE * out;
 	c1 = c;
 	c2 = c;
 	maxIW = 0.9;
@@ -465,9 +465,9 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 			pso->evaluations == 294000 ||
 			pso->evaluations == 490000) {
 
-		out1 = fopen("INTERMEDIARY.DAT", "a");
-		fprintf(out1, "%.50f\t", (float) pso->best_so_far);
-		fclose (out1);
+		out = fopen("INTERMEDIARY.DAT", "a");
+		fprintf(out, "%.50g\t", (double) pso->best_so_far);
+		fclose(out);
 
 	}
 
@@ -483,7 +483,6 @@ static void move(unsigned int iter, MODEL * pso) {
 
 	unsigned int a, n;
 	int i, j, ii, jj;
-	//int minx, maxx, miny, maxy;
 	int neighParticle;
 	int update;
 
@@ -545,6 +544,7 @@ static void move(unsigned int iter, MODEL * pso) {
 			updateParticles(pso, a, iter);
 
 	 } // Cycle particles
+
 }
 
 /**
@@ -561,7 +561,7 @@ int main(int argc, char* argv[]) {
 	// Parse command-line arguments and read PSO parameter file.
 	parse_params(argc, argv);
 
-	FILE * out1;
+	FILE * out;
 	unsigned int i;
 	MODEL * pso;
 
@@ -588,8 +588,8 @@ int main(int argc, char* argv[]) {
 	memset(averageBestSoFar, 0, max_evaluations / 100 * sizeof(long double));
 
 	// Create empty file for intermediary results
-	out1 = fopen("INTERMEDIARY.DAT", "w");
-	fclose (out1);
+	out = fopen("INTERMEDIARY.DAT", "w");
+	fclose(out);
 
 	// Perform PSO runs
 	for (i = 0; i < n_runs; ++i) {
@@ -640,13 +640,15 @@ int main(int argc, char* argv[]) {
 		// criteria, set it to the maximum number of performed evaluations
 		if (flag == 0) crit_evals[i] = max_evaluations;
 
+
+		// Add a newline to the intermediary file
+		out = fopen("INTERMEDIARY.DAT", "a");
+		fprintf(out, "\n");
+		fclose (out);
+
 		// Inform user of current run performance
 		printf("Run %4u | BestFit = %10.5g | AvgFit = %10.5g\n",
 			i, (float) pso->best_fitness, (float) pso->average_fitness);
-
-		out1 = fopen("INTERMEDIARY.DAT", "a");
-		fprintf(out1, "\n");
-		fclose (out1);
 
 		// Keep best so far for current run
 		best_so_far[i] = (double) pso->best_so_far;
@@ -657,22 +659,22 @@ int main(int argc, char* argv[]) {
 
 	// Save file containing the average (between runs) best so far fitness
 	// after 100, 200, ... evaluations.
-	out1 = fopen("AVE_BESTSOFAR.DAT", "w");
+	out = fopen("AVE_BESTSOFAR.DAT", "w");
 	for (i = 0; i < counter; ++i)
-		fprintf(out1,"%.40g\n", (double) averageBestSoFar[i]);
-	fclose (out1);
+		fprintf(out, "%.40g\n", (double) averageBestSoFar[i]);
+	fclose(out);
 
 	// Save number of evaluations required for getting below stop criterion
-	out1 = fopen("AES.DAT", "w");
+	out = fopen("AES.DAT", "w");
 	for (i = 0; i < n_runs; ++i)
-		fprintf(out1, "\n%d", crit_evals[i]);
-	fclose(out1);
+		fprintf(out, "\n%d", crit_evals[i]);
+	fclose(out);
 
 	// Save best so far for each run
-	out1 = fopen("FINAL.DAT", "w");
+	out = fopen("FINAL.DAT", "w");
 	for (i = 0; i < n_runs; ++i)
-		fprintf(out1, "%.45g\n", best_so_far[i]);
-	fclose(out1);
+		fprintf(out, "%.45g\n", best_so_far[i]);
+	fclose(out);
 
 	// End program successfully
 	return EXIT_SUCCESS;
