@@ -39,6 +39,8 @@ static unsigned int prng_seed;
 static char input_file[MAX_FILENAME_LEN];
 // Function/problem to solve
 static SelFunc evaluate;
+// Neighbors
+static NEIGHBORHOOD neighbors;
 
 // PSO parameters
 
@@ -114,69 +116,99 @@ static void parse_params(int argc, char * argv[]) {
 	if (!ini) ERROR_EXIT("Unable to parse input file '%s'\n", input_file);
 
 	// Read PSO parameters file
+
 	max_x = (unsigned int) iniparser_getint(ini, "pso:max_x", 0);
 	if (max_x < 1)
 		ERROR_EXIT("Invalid input parameter: max_x\n");
+
 	max_y = (unsigned int) iniparser_getint(ini, "pso:max_y", 0);
 	if (max_y < 1)
 		ERROR_EXIT("Invalid input parameter: max_y\n");
+
 	n_runs = (unsigned int) iniparser_getint(ini, "pso:n_runs", 0);
 	if (n_runs < 1)
 		ERROR_EXIT("Invalid input parameter: n_runs\n");
+
 	max_t = (unsigned int) iniparser_getint(ini, "pso:max_t", 0);
 	if (max_t < 1)
 		ERROR_EXIT("Invalid input parameter: max_t\n");
+
 	max_evaluations = (unsigned int) iniparser_getint(ini, "pso:max_evaluations", 0);
 	if (max_evaluations < 1)
 		ERROR_EXIT("Invalid input parameter: max_evaluations\n");
+
 	popSize = (unsigned int) iniparser_getint(ini, "pso:popsize", 0);
 	if (popSize < 1)
 		ERROR_EXIT("Invalid input parameter: popSize\n");
+
 	algorithm = (unsigned int) iniparser_getint(ini, "pso:algorithm", 0);
 	if ((algorithm < 1) || (algorithm > 2))
 		ERROR_EXIT("Invalid input parameter: algorithm\n");
+
 	gbest = iniparser_getboolean(ini, "pso:gbest", -1);
 	if (gbest == -1)
 		ERROR_EXIT("Invalid input parameter: gbest\n");
+
+	// Neighborhood
 	neighborhood = (unsigned int) iniparser_getint(ini, "pso:neighborhood", 2);
-	if (neighborhood == 2)
+	if (neighborhood == 0) { // Moore
+		neighbors.neighs = (const NEIGHBOR[]) NEIGH_MOORE;
+		neighbors.num_neighs = NEIGH_MOORE_N;
+	} else if (neighborhood == 1) { // VN
+		neighbors.neighs = (const NEIGHBOR[]) NEIGH_VN;
+		neighbors.num_neighs = NEIGH_VN_N;
+	} else {
 		ERROR_EXIT("Invalid input parameter: neighborhood\n");
+	}
+
 	problem = (unsigned int) iniparser_getint(ini, "pso:problem", 0);
 	if ((problem < 1) || (problem > 10))
 		ERROR_EXIT("Invalid input parameter: problem\n");
+
 	Xmax = iniparser_getdouble(ini, "pso:xmax", -DBL_MAX);
 	if (Xmax < -DBL_MAX + 0.1)
 		ERROR_EXIT("Invalid input parameter: Xmax\n");
+
 	Vmax = iniparser_getdouble(ini, "pso:vmax", -DBL_MAX);
 	if (Vmax < -DBL_MAX + 0.1)
 		ERROR_EXIT("Invalid input parameter: Vmax\n");
+
 	chi = iniparser_getdouble(ini, "pso:chi", -DBL_MAX);
 	if (chi < -DBL_MAX + 0.1)
 		ERROR_EXIT("Invalid input parameter: chi\n");
+
 	omega = iniparser_getdouble(ini, "pso:omega", -DBL_MAX);
 	if (omega < -DBL_MAX + 0.1)
 		ERROR_EXIT("Invalid input parameter: omega\n");
+
 	c = iniparser_getdouble(ini, "pso:c", -DBL_MAX);
 	if (c < -DBL_MAX + 0.1)
 		ERROR_EXIT("Invalid input parameter: c\n");
+
 	numberVariables = (unsigned int) iniparser_getint(ini, "pso:numbervariables", 0);
 	if (numberVariables < 1)
 		ERROR_EXIT("Invalid input parameter: numberVariables\n");
+
 	iWeightStrategy = (unsigned int) iniparser_getint(ini, "pso:iweightstrategy", 2);
 	if (iWeightStrategy == 2)
 		ERROR_EXIT("Invalid input parameter: iWeightStrategy\n");
+
 	cStrategy = (unsigned int) iniparser_getint(ini, "pso:cstrategy", 2);
 	if (cStrategy == 2)
 		ERROR_EXIT("Invalid input parameter: cStrategy\n");
+
 	assyInitialization = iniparser_getboolean(ini, "pso:assyinitialization", -1);
 	if (assyInitialization == -1)
 		ERROR_EXIT("Invalid input parameter: assyInitialization\n");
+
 	initialXmin = iniparser_getdouble(ini, "pso:initialxmin", -DBL_MAX);
 	if (initialXmin < -DBL_MAX + 0.1)
 		ERROR_EXIT("Invalid input parameter: initialXmin\n");
+
 	initialXmax = iniparser_getdouble(ini, "pso:initialxmax", -DBL_MAX);
 	if (initialXmax < -DBL_MAX + 0.1)
 		ERROR_EXIT("Invalid input parameter: initialXmax\n");
+
 	crit = iniparser_getdouble(ini, "pso:crit", -DBL_MAX);
 	if (crit < -DBL_MAX + 0.1)
 		ERROR_EXIT("Invalid input parameter: crit\n");
@@ -433,9 +465,9 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
  */
 static void move(unsigned int iter, MODEL * pso) {
 
-	unsigned int a;
+	unsigned int a, n;
 	int i, j, ii, jj;
-	int minx, maxx, miny, maxy;
+	//int minx, maxx, miny, maxy;
 	int neighParticle;
 	int update;
 
@@ -446,66 +478,53 @@ static void move(unsigned int iter, MODEL * pso) {
 		update = 0;
 
 		// Movement bounds for current particle
-		minx = pso->particle[a].x - 1;
-		miny = pso->particle[a].y - 1;
-		maxx = pso->particle[a].x + 1;
-		maxy = pso->particle[a].y + 1;
+		//minx = pso->particle[a].x - 1;
+		//miny = pso->particle[a].y - 1;
+		//maxx = pso->particle[a].x + 1;
+		//maxy = pso->particle[a].y + 1;
 
 		// Cycle through neighbors
-		for (i = minx; i <= maxx; ++i) {
+		for (n = 0; n < neighbors.num_neighs; ++n) {
 
-			for (j = miny; j <= maxy; ++j) {
+			i = pso->particle[a].x + neighbors.neighs[n].dx;
+			j = pso->particle[a].y + neighbors.neighs[n].dy;
 
-				// Adjust neighbors location according to toroidal topology
-				ii = i;
-				jj = j;
-				if (i < 0)
-					ii = max_x - 1;
-				if (i >= (int) max_x)
-					ii = 0;
-				if (j < 0)
-					jj = max_y - 1;
-				if (j >= (int) max_y)
-					jj = 0;
+			// Adjust neighbors location according to toroidal topology
+			ii = i;
+			jj = j;
+			if (i < 0)
+				ii = max_x - 1;
+			if (i >= (int) max_x)
+				ii = 0;
+			if (j < 0)
+				jj = max_y - 1;
+			if (j >= (int) max_y)
+				jj = 0;
 
-				// Update current particle with information provided by
-				// neighbors
-				if ((neighborhood == 0) || // Moore neighborhood
-						// Von Neumann neighborhood
-						((i == minx + 1) && (j == miny + 1)) ||
-						((i == minx + 1) && (j == miny)) ||
-						((i == minx) && (j == miny + 1)) ||
-						((i == minx + 1) && (j == maxy)) ||
-						((i == maxx) && (j == miny + 1))) {
+			// Get neighbor particle
+			neighParticle = pso->cell[ii][jj].particle;
 
-					// Get neighbor particle
-					neighParticle = pso->cell[ii][jj].particle;
+			// If a neighbor particle is the worst particle...
+			if (neighParticle == pso->worst_id)
+				// ...mark current particle for updating (SS-PSO only)
+				update = 1;
 
-					// If a neighbor particle is the worst particle...
-					if (neighParticle == pso->worst_id)
-						// ...mark current particle for updating (SS-PSO only)
-						update = 1;
+			// Does the neighbor know of better fitness than current
+			// particle?
+			if (pso->particle[neighParticle].best_fitness_so_far <
+					pso->particle[a].informants_best_fitness_so_far) {
 
-					// Does the neighbor know of better fitness than current
-					// particle?
-					if (pso->particle[neighParticle].best_fitness_so_far <
-							pso->particle[a].informants_best_fitness_so_far) {
+				// If so, current particle will get that knowledge also
+				pso->particle[a].informants_best_fitness_so_far =
+					pso->particle[neighParticle].best_fitness_so_far;
 
-						// If so, current particle will get that knowledge also
-						pso->particle[a].informants_best_fitness_so_far =
-							pso->particle[neighParticle].best_fitness_so_far;
+				memmove(
+					pso->particle[a].informants_best_position_so_far,
+					pso->particle[neighParticle].best_position_so_far,
+					numberVariables * sizeof(float));
+			}
 
-						memmove(
-							pso->particle[a].informants_best_position_so_far,
-							pso->particle[neighParticle].best_position_so_far,
-							numberVariables * sizeof(float));
-					}
-
-				}
-
-			} // Cycle y
-
-		} // Cycle x
+		} // Cycle neighbors
 
 		// Typical PSO update strategy: update all
 		if (algorithm == 1)
