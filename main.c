@@ -33,34 +33,28 @@
 
 // *************** Global Variables *****************
 
-/// Seed for pseudo-random number generator.
-static unsigned int prng_seed;
-/// File containing PSO parameters.
-static char input_file[MAX_FILENAME_LEN];
-// Function/problem to solve
-static SelFunc evaluate;
-// Neighbors
-static const NEIGHBORHOOD * neighbors;
+// Known neighborhoods
+
+/// Moore neighborhood
 static const NEIGHBORHOOD neighbors_moore = {
 	.num_neighs = 9,
 	.neighs = (NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 1}, {1, 0},
 		{1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}}};
+
+/// Von Neumann neighborhood
 static const NEIGHBORHOOD neighbors_vn = {
 	.num_neighs = 5,
 	.neighs = (NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}};
 
-/*
-#define NEIGH_MOORE \
-	{{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 0},
-	{0, 1}, {1, -1}, {1, 0}, {1, 1}}
 
-	{{0, 0}, {0, 1}, {1, 1}, {1, 0}, {1, -1},
-	{0, -1}, {-1, -1}, {-1, 0}, {-1, 1}}
-#define NEIGH_MOORE_N 9
-#define NEIGH_VN
-	{{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}
-#define NEIGH_VN_N 5
-*/
+/// Seed for pseudo-random number generator.
+static unsigned int prng_seed;
+/// File containing PSO parameters.
+static char input_file[MAX_FILENAME_LEN];
+/// Function/problem to solve.
+static SelFunc evaluate;
+/// Neighborhood used in PSO.
+static const NEIGHBORHOOD * neighbors;
 
 // PSO parameters
 
@@ -437,12 +431,12 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 		phi1 = rd_luniform(0.0, c1);
 		phi2 = rd_luniform(0.0, c2);
 
-		// Update Velocity
+		// Determine updated Velocity
 		v = omega * v + (float) phi1 * (pi - x) + (float) phi2 * (pg - x);
 		if (v > Vmax) v = Vmax;
 		if (v < -Vmax) v = -Vmax;
 
-		// Update Position
+		// Determine updated Position
 		x = x + v;
 		if (x > Xmax) {
 			x = Xmax;
@@ -452,16 +446,20 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 			x = -Xmax;
 			v = 0;
 		}
+
+		// Update Position and Velocity for current variable
 		pso->particle[i].position[j] = x;
 		pso->particle[i].velocity[j] = v;
+
 	} // Cycle variables
 
-	// Determine particle fitness
+	// Determine particle fitness for new position
 	pso->particle[i].fitness =
 		evaluate(pso->particle[i].position, numberVariables);
 
 	// Increment number of evaluations
 	pso->evaluations += 1;
+
 
 	if (pso->evaluations == 49000 ||
 			pso->evaluations == 147000 ||
@@ -473,6 +471,7 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 		fclose (out1);
 
 	}
+
 }
 
 /**
@@ -495,12 +494,6 @@ static void move(unsigned int iter, MODEL * pso) {
 		// By default particle update is set to 0 (only relevant to SS-PSO)
 		update = 0;
 
-		// Movement bounds for current particle
-		//minx = pso->particle[a].x - 1;
-		//miny = pso->particle[a].y - 1;
-		//maxx = pso->particle[a].x + 1;
-		//maxy = pso->particle[a].y + 1;
-
 		// Cycle through neighbors
 		for (n = 0; n < neighbors->num_neighs; ++n) {
 
@@ -518,8 +511,6 @@ static void move(unsigned int iter, MODEL * pso) {
 				jj = max_y - 1;
 			if (j >= (int) max_y)
 				jj = 0;
-
-			//if ((iter == 1) && (a == 0)) printf("(%d, %d)=(%d, %d)", ii, jj, neighbors->neighs[n].dx, neighbors->neighs[n].dy);
 
 			// Get neighbor particle
 			neighParticle = pso->cell[ii][jj].particle;
@@ -624,8 +615,7 @@ int main(int argc, char* argv[]) {
 			move(iter, pso);
 
 			if (pso->evaluations > counter * 100) {
-				averageBestSoFar[counter] =
-					averageBestSoFar[counter] +
+				averageBestSoFar[counter] +=
 					pso->best_so_far / (long double) n_runs;
 				counter += 1;
 			}
