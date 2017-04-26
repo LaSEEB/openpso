@@ -55,6 +55,8 @@ static char input_file[MAX_FILENAME_LEN];
 static SelFunc evaluate;
 /// Neighborhood used in PSO.
 static const NEIGHBORHOOD * neighbors;
+// Population size
+static unsigned int popSize;
 
 // PSO parameters
 
@@ -64,8 +66,6 @@ static unsigned int max_x, max_y;
 static unsigned int max_t;
 // Maximum number of evaluations
 static unsigned int max_evaluations;
-// Population size
-static unsigned int popSize;
 // Number of runs
 static unsigned int n_runs;
 // PSO algorithm to use
@@ -151,10 +151,6 @@ static void parse_params(int argc, char * argv[]) {
 	if (max_evaluations < 1)
 		ERROR_EXIT("Invalid input parameter: max_evaluations\n");
 
-	popSize = (unsigned int) iniparser_getint(ini, "pso:popsize", 0);
-	if (popSize < 1)
-		ERROR_EXIT("Invalid input parameter: popSize\n");
-
 	algorithm = (unsigned int) iniparser_getint(ini, "pso:algorithm", 0);
 	if ((algorithm < 1) || (algorithm > 2))
 		ERROR_EXIT("Invalid input parameter: algorithm\n");
@@ -224,6 +220,9 @@ static void parse_params(int argc, char * argv[]) {
 	crit = iniparser_getdouble(ini, "pso:crit", -DBL_MAX);
 	if (crit < -DBL_MAX + 0.1)
 		ERROR_EXIT("Invalid input parameter: crit\n");
+
+	// Determine population size based on grid size
+	popSize = max_x * max_y;
 
 	// Release dictionary object
 	iniparser_freedict(ini);
@@ -587,6 +586,10 @@ int main(int argc, char* argv[]) {
 
 	// Initialize averageBestSoFar array, set contents to zero
 	memset(averageBestSoFar, 0, max_evaluations / 100 * sizeof(long double));
+
+	// Create empty file for intermediary results
+	out1 = fopen("INTERMEDIARY.DAT", "w");
+	fclose (out1);
 
 	// Perform PSO runs
 	for (i = 0; i < n_runs; ++i) {
