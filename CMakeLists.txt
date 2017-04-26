@@ -4,6 +4,10 @@ project(SSPSO)
 # Compiler options for GCC/Clang
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -std=c99")
 
+find_package(OpenMP QUIET)
+
+option(USE_OPENMP  "Use OpenMP if available?" ON)
+
 # Avoid including MinGW dll dependency
 if(MINGW)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
@@ -19,3 +23,12 @@ include_directories(libs/mtwist libs/iniparser)
 # Create executable
 add_executable(${PROJECT_NAME} main.c functions.c)
 target_link_libraries(${PROJECT_NAME} m mtwist iniparser)
+
+if (${OPENMP_FOUND} AND ${USE_OPENMP})
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		COMPILE_FLAGS ${OpenMP_C_FLAGS}
+		LINK_FLAGS ${OpenMP_C_FLAGS})
+	message("Using OpenMP!")
+else()
+	message("No OpenMP :(")
+endif()

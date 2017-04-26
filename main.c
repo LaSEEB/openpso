@@ -395,7 +395,6 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 	long double phi1, phi2;
 	float c1, c2;
 	float maxIW, minIW;
-	FILE * out;
 	c1 = c;
 	c2 = c;
 	maxIW = 0.9;
@@ -459,18 +458,6 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 	// Increment number of evaluations
 	pso->evaluations += 1;
 
-
-	if (pso->evaluations == 49000 ||
-			pso->evaluations == 147000 ||
-			pso->evaluations == 294000 ||
-			pso->evaluations == 490000) {
-
-		out = fopen("INTERMEDIARY.DAT", "a");
-		fprintf(out, "%.50g\t", (double) pso->best_so_far);
-		fclose(out);
-
-	}
-
 }
 
 /**
@@ -487,6 +474,9 @@ static void move(unsigned int iter, MODEL * pso) {
 	int update;
 
 	// Cycle through particles
+#ifdef _OPENMP
+	#pragma omp parallel for
+#endif
 	for (a = 0; a < popSize; ++a) {
 
 		// By default particle update is set to 0 (only relevant to SS-PSO)
@@ -587,10 +577,6 @@ int main(int argc, char* argv[]) {
 	// Initialize averageBestSoFar array, set contents to zero
 	memset(averageBestSoFar, 0, max_evaluations / 100 * sizeof(long double));
 
-	// Create empty file for intermediary results
-	out = fopen("INTERMEDIARY.DAT", "w");
-	fclose(out);
-
 	// Perform PSO runs
 	for (i = 0; i < n_runs; ++i) {
 
@@ -639,12 +625,6 @@ int main(int argc, char* argv[]) {
 		// If the number of evaluations was not enough to get below the stop
 		// criteria, set it to the maximum number of performed evaluations
 		if (flag == 0) crit_evals[i] = max_evaluations;
-
-
-		// Add a newline to the intermediary file
-		out = fopen("INTERMEDIARY.DAT", "a");
-		fprintf(out, "\n");
-		fclose (out);
 
 		// Inform user of current run performance
 		printf("Run %4u | BestFit = %10.5g | AvgFit = %10.5g\n",
