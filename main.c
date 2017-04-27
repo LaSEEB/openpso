@@ -16,6 +16,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
+#ifdef _OPENMP
+	#include <omp.h>
+#endif
 
 // Local libraries
 #include "randistrs.h"
@@ -59,8 +62,12 @@ static char input_file[MAX_FILENAME_LEN];
 static SelFunc evaluate;
 /// Neighborhood used in PSO.
 static const NEIGHBORHOOD * neighbors;
-// Population size
+/// Population size.
 static unsigned int popSize;
+/// Number of threads.
+static unsigned int num_threads;
+/// PRNG states
+static mt_state * prng_states;
 
 // PSO parameters
 
@@ -130,6 +137,14 @@ static void parse_params(int argc, char * argv[]) {
 		prng_seed = atoi(argv[2]);
 	else
 		prng_seed = DEFAULT_PRNG_SEED;
+
+	// Number of threads
+#ifdef _OPENMP
+	num_threads = omp_get_max_threads();
+#else
+	num_threads = 1;
+#endif
+	printf("Num threads=%u\n", num_threads);
 
 	// Try to open PSO parameters file
 	ini = iniparser_load(input_file);
@@ -286,11 +301,12 @@ static void initialize(MODEL * pso) {
 
 			// Initialize position for current variable of current particle
 			pso->particle[i].position[j] =
-				rd_luniform(xmin, xmax);
+				rds_luniform(&prng_states[0], xmin, xmax);
 
 			// Initialize velocity for current variable of current particle
 			pso->particle[i].velocity[j] =
-				rd_luniform(-Xmax, Xmax) * (0.5 - rd_luniform(0, 1.0));
+				rds_luniform(&prng_states[0], -Xmax, Xmax) *
+				(0.5 - rds_luniform(&prng_states[0], 0, 1.0));
 
 			// Set best position so far as current position
 			pso->particle[i].best_position_so_far[j] =
@@ -408,10 +424,17 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 	long double phi1, phi2;
 	float c1, c2;
 	float maxIW, minIW;
+#ifdef _OPENMP
+	unsigned int tid = omp_get_thread_num();
+#else
+	unsigned int tid = 0;
+#endif
+
 	c1 = c;
 	c2 = c;
 	maxIW = 0.9;
 	minIW = 0.4;
+
 
 	// TVIW-PSO
 	if (iWeightStrategy == 1) {
@@ -439,8 +462,8 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 		pi = pso->particle[i].best_position_so_far[j];
 		v = pso->particle[i].velocity[j];
 		x = pso->particle[i].position[j];
-		phi1 = rd_luniform(0.0, c1);
-		phi2 = rd_luniform(0.0, c2);
+		phi1 = rds_luniform(&prng_states[tid], 0.0, c1);
+		phi2 = rds_luniform(&prng_states[tid], 0.0, c2);
 
 		// Determine updated Velocity
 		v = omega * v + (float) phi1 * (pi - x) + (float) phi2 * (pg - x);
@@ -581,8 +604,10 @@ int main(int argc, char* argv[]) {
 	printf("PSO parameter file : %s\n", input_file);
 	printf("PRNG seed          : %d\n", prng_seed);
 
-	// Set PRNG seed.
-	mt_seed32new(prng_seed);
+	// Initialize PRNG states
+	prng_states = (mt_state *) malloc(num_threads * sizeof(mt_state));
+	for (i = 0; i < num_threads; ++i)
+		mts_seed32new(&prng_states[i], prng_seed + i);
 
 	// Set function/problem to optimize
 	evaluate = getSelFunc(problem);
@@ -670,6 +695,9 @@ int main(int argc, char* argv[]) {
 	for (i = 0; i < n_runs; ++i)
 		fprintf(out, "%.45g\n", best_so_far[i]);
 	fclose(out);
+
+	// Release PRNG states
+	free(prng_states);
 
 	// End program successfully
 	return EXIT_SUCCESS;
