@@ -46,6 +46,10 @@ static const NEIGHBORHOOD neighbors_vn = {
 	.num_neighs = 5,
 	.neighs = (NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}};
 
+/// Ring neighborhood (requires max_y == 1)
+static const NEIGHBORHOOD neighbors_ring = {
+	.num_neighs = 3,
+	.neighs = (NEIGHBOR[]) {{-1, 0}, {0, 0}, {0, 1}}};
 
 /// Seed for pseudo-random number generator.
 static unsigned int prng_seed;
@@ -160,11 +164,14 @@ static void parse_params(int argc, char * argv[]) {
 		ERROR_EXIT("Invalid input parameter: gbest\n");
 
 	// Neighborhood
-	neighborhood = (unsigned int) iniparser_getint(ini, "pso:neighborhood", 2);
+	neighborhood = (unsigned int) iniparser_getint(ini, "pso:neighborhood", 3);
 	if (neighborhood == 0) { // Moore
 		neighbors = &neighbors_moore;
 	} else if (neighborhood == 1) { // VN
 		neighbors = &neighbors_vn;
+	} else if (neighborhood == 2) { // Ring (requires max_y == 1)
+		neighbors = &neighbors_ring;
+		if (max_y != 1) ERROR_EXIT("Ring neighborhood requires max_y==1\n");
 	} else {
 		ERROR_EXIT("Invalid input parameter: neighborhood\n");
 	}
