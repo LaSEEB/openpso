@@ -100,8 +100,10 @@ static int assyInitialization;
 static double initialXmin;
 //
 static double initialXmax;
-//
+/// Stop criterion
 static double crit;
+// Keep going until max_evaluations after stop criterion is meet?
+static int crit_keep_going;
 
 /**
  * Parse command-line options and read PSO parameters from file.
@@ -227,6 +229,10 @@ static void parse_params(int argc, char * argv[]) {
 	crit = iniparser_getdouble(ini, "pso:crit", -DBL_MAX);
 	if (crit < -DBL_MAX + 0.1)
 		ERROR_EXIT("Invalid input parameter: crit\n");
+
+ 	crit_keep_going = iniparser_getboolean(ini, "pso:crit_keep_going", -1);
+	if (crit_keep_going == -1)
+		ERROR_EXIT("Invalid input parameter: crit_keep_going\n");
 
 	// Determine population size based on grid size
 	popSize = max_x * max_y;
@@ -625,6 +631,8 @@ int main(int argc, char* argv[]) {
 			if ((pso->best_so_far < crit) && (flag == 0)) {
 				crit_evals[i] = pso->evaluations;
 				flag = 1;
+				// Stop current run if I'm not supposed to keep going
+				if (!crit_keep_going) break;
 			}
 
 		} while (pso->evaluations < max_evaluations);
