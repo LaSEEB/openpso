@@ -410,15 +410,15 @@ static void updatePopulationData(MODEL * pso) {
 }
 
 /**
- * Update a particle.
+ * Update position and velocity of a particle.
  *
  * @param[in,out] PSO model containing particles to update.
- * @param[in] i Index of particle to update.
+ * @param[in] a Index of particle to update.
  * @param[in] iter Iteration count for current run.
  */
-static void updateParticles(MODEL * pso, int i, unsigned int iter) {
+static void updateParticlePV(MODEL * pso, int a, unsigned int iter) {
 
-	unsigned int j;
+	unsigned int i;
 	float v, x;
 	float pi, pg = 0.0;
 	long double phi1, phi2;
@@ -449,19 +449,19 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 	}
 
 	// Cycle through variables
-	for (j = 0; j < numberVariables; ++j) {
+	for (i = 0; i < numberVariables; ++i) {
 
 		// Use local best or global best?
 		if (gbest == 0)
 			// Local best
-			pg = pso->particle[i].informants_best_position_so_far[j];
+			pg = pso->particle[a].informants_best_position_so_far[i];
 		if (gbest == 1)
 			// Global best
-			pg = pso->best_position_so_far[j];
+			pg = pso->best_position_so_far[i];
 
-		pi = pso->particle[i].best_position_so_far[j];
-		v = pso->particle[i].velocity[j];
-		x = pso->particle[i].position[j];
+		pi = pso->particle[a].best_position_so_far[i];
+		v = pso->particle[a].velocity[i];
+		x = pso->particle[a].position[i];
 		phi1 = rds_luniform(&prng_states[tid], 0.0, c1);
 		phi2 = rds_luniform(&prng_states[tid], 0.0, c2);
 
@@ -482,14 +482,14 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 		}
 
 		// Update Position and Velocity for current variable
-		pso->particle[i].position[j] = x;
-		pso->particle[i].velocity[j] = v;
+		pso->particle[a].position[i] = x;
+		pso->particle[a].velocity[i] = v;
 
 	} // Cycle variables
 
 	// Determine particle fitness for new position
-	pso->particle[i].fitness =
-		evaluate(pso->particle[i].position, numberVariables);
+	pso->particle[a].fitness =
+		evaluate(pso->particle[a].position, numberVariables);
 
 	// Increment number of evaluations
 	pso->evaluations += 1;
@@ -497,12 +497,12 @@ static void updateParticles(MODEL * pso, int i, unsigned int iter) {
 }
 
 /**
- * Move the particles.
+ * Update position and velocity of all or some of the particles.
  *
  * @param[in] iter Iteration count for current run.
  * @param[in,out] pso PSO model containing particles to move.
  */
-static void move(unsigned int iter, MODEL * pso) {
+static void updateParticles(unsigned int iter, MODEL * pso) {
 
 	unsigned int a, n;
 	int i, j, ii, jj;
@@ -563,11 +563,11 @@ static void move(unsigned int iter, MODEL * pso) {
 
 		// Typical PSO update strategy: update all
 		if (algorithm == 1)
-			updateParticles(pso, a, iter);
+			updateParticlePV(pso, a, iter);
 
 		// SS-PSO update strategy: only the worst and its neighbors are updated
 		if ((algorithm == 2) && (update == 1))
-			updateParticles(pso, a, iter);
+			updateParticlePV(pso, a, iter);
 
 	 } // Cycle particles
 
@@ -640,8 +640,8 @@ int main(int argc, char* argv[]) {
 			// average fitness
 			updatePopulationData(pso);
 
-			// Move the particles
-			move(iter, pso);
+			// Update all particles
+			updateParticles(iter, pso);
 
 			// Is it time to update the average (between runs) best so far?
 			if (pso->evaluations > counter * 100) {
