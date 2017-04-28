@@ -112,6 +112,20 @@ static double crit;
 // Keep going until max_evaluations after stop criterion is meet?
 static int crit_keep_going;
 
+static int cmpdbl(const void * a, const void * b) {
+
+	if (*(double*) a > *(double*) b) return 1;
+	else if (*(double*) a < *(double*) b) return -1;
+	else return 0;
+}
+
+static int cmpuint(const void * a, const void * b) {
+
+	if (*(unsigned int*) a > *(unsigned int*) b) return 1;
+	else if (*(unsigned int*) a < *(unsigned int*) b) return -1;
+	else return 0;
+}
+
 /**
  * Parse command-line options and read PSO parameters from file.
  *
@@ -144,7 +158,6 @@ static void parse_params(int argc, char * argv[]) {
 #else
 	num_threads = 1;
 #endif
-	printf("Num threads=%u\n", num_threads);
 
 	// Try to open PSO parameters file
 	ini = iniparser_load(input_file);
@@ -601,8 +614,11 @@ int main(int argc, char* argv[]) {
 	int flag;
 
 	// Show parameter information to user
+	printf("\nPARAMS\n------\n");
+	printf("Num threads        : %u\n", num_threads);
 	printf("PSO parameter file : %s\n", input_file);
 	printf("PRNG seed          : %d\n", prng_seed);
+	printf("\n");
 
 	// Initialize PRNG states
 	prng_states = (mt_state *) malloc(num_threads * sizeof(mt_state));
@@ -614,6 +630,8 @@ int main(int argc, char* argv[]) {
 
 	// Initialize averageBestSoFar array, set contents to zero
 	memset(averageBestSoFar, 0, max_evaluations / 100 * sizeof(long double));
+
+	printf("\nRUNS\n----\n");
 
 	// Perform PSO runs
 	for (i = 0; i < n_runs; ++i) {
@@ -667,8 +685,10 @@ int main(int argc, char* argv[]) {
 		if (flag == 0) crit_evals[i] = max_evaluations;
 
 		// Inform user of current run performance
-		printf("Run %4u | BestFit = %10.5g | AvgFit = %10.5g\n",
-			i, (float) pso->best_fitness, (float) pso->average_fitness);
+		printf("Run %4u | BestFit = %10.5g | AvgFit = %10.5g | "
+			"EvalsCrit = %6u | EvalsAll = %6u | Iters = %6u\n",
+			i, (double) pso->best_so_far, (double) pso->average_fitness,
+			crit_evals[i], pso->evaluations, iter);
 
 		// Keep best so far for current run
 		best_so_far[i] = (double) pso->best_so_far;
@@ -692,9 +712,20 @@ int main(int argc, char* argv[]) {
 
 	// Save best so far for each run
 	out = fopen("FINAL.DAT", "w");
-	for (i = 0; i < n_runs; ++i)
+	for (i = 0; i < n_runs; ++i) {
 		fprintf(out, "%.45g\n", best_so_far[i]);
+	}
 	fclose(out);
+
+	// Show fitness statistics over all runs
+	qsort(best_so_far, n_runs, sizeof(double), cmpdbl);
+	printf("\nSTATISTICS\n----------\n");
+	qsort(best_so_far, n_runs, sizeof(double), cmpdbl);
+	printf("[Fitness  ] Median = %10.5g | Min = %10.5g | Max = %10.5g\n",
+		best_so_far[n_runs / 2], best_so_far[0], best_so_far[n_runs - 1]);
+	qsort(crit_evals, n_runs, sizeof(unsigned int), cmpuint);
+	printf("[EvalsCrit] Median = %10u | Min = %10u | Max = %10u\n\n",
+		crit_evals[n_runs / 2], crit_evals[0], crit_evals[n_runs - 1]);
 
 	// Release PRNG states
 	free(prng_states);
