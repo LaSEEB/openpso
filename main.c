@@ -52,7 +52,7 @@ static const NEIGHBORHOOD neighbors_vn = {
 /// Ring neighborhood (requires max_y == 1)
 static const NEIGHBORHOOD neighbors_ring = {
 	.num_neighs = 3,
-	.neighs = (NEIGHBOR[]) {{-1, 0}, {0, 0}, {0, 1}}};
+	.neighs = (NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
 
 /// Seed for pseudo-random number generator.
 static unsigned int prng_seed;
@@ -201,7 +201,12 @@ static void parse_params(int argc, char * argv[]) {
 		neighbors = &neighbors_vn;
 	} else if (neighborhood == 2) { // Ring (requires max_y == 1)
 		neighbors = &neighbors_ring;
-		if (max_y != 1) ERROR_EXIT("Ring neighborhood requires max_y==1\n");
+		if (max_y != 1) {
+			max_x = max_x * max_y;
+			max_y = 1;
+			fprintf(stderr, "WARNING: 1D neighborhood selected, setting "
+				"max_x==%u and max_y==%u\n", max_x, max_y);
+		}
 	} else {
 		ERROR_EXIT("Invalid input parameter: neighborhood\n");
 	}
