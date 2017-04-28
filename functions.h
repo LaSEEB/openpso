@@ -11,6 +11,7 @@
 #include "randistrs.h"
 #include "mtwist.h"
 #include "definicoes.h"
+#include "functions_data.h"
 
 typedef long double (* SelFunc)(PARTICLE position, unsigned int nvars, mt_state * prng_state);
 
