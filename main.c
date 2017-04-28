@@ -319,7 +319,7 @@ static void initialize(MODEL * pso) {
 
 		// Determine fitness for current particle
 		pso->particle[i].fitness =
-			evaluate(pso->particle[i].position, numberVariables);
+			evaluate(pso->particle[i].position, numberVariables, &prng_states[0]);
 
 		// Set my own fitness as best fitness so far
 		pso->particle[i].best_fitness_so_far =
@@ -489,7 +489,7 @@ static void updateParticlePV(MODEL * pso, int a, unsigned int iter) {
 
 	// Determine particle fitness for new position
 	pso->particle[a].fitness =
-		evaluate(pso->particle[a].position, numberVariables);
+		evaluate(pso->particle[a].position, numberVariables, &prng_states[tid]);
 
 	// Increment number of evaluations
 	pso->evaluations += 1;
