@@ -406,7 +406,7 @@ static void updatePopulationData(MODEL * pso) {
 			pso->best_so_far = pso->particle[i].fitness;
 			memmove(pso->best_position_so_far,
 				pso->particle[i].position,
-				numberVariables * sizeof(float));
+				numberVariables * sizeof(double));
 		}
 
 		// Updates best in current population
@@ -414,7 +414,7 @@ static void updatePopulationData(MODEL * pso) {
 			pso->best_fitness = pso->particle[i].fitness;
 			memmove(pso->best_position,
 				pso->particle[i].position,
-				numberVariables * sizeof(float));
+				numberVariables * sizeof(double));
 		}
 
 		// Updates particle's best position
@@ -422,7 +422,7 @@ static void updatePopulationData(MODEL * pso) {
 			pso->particle[i].best_fitness_so_far = pso->particle[i].fitness;
 			memmove(pso->particle[i].best_position_so_far,
 				pso->particle[i].position,
-				numberVariables * sizeof(float));
+				numberVariables * sizeof(double));
 
 		}
 
@@ -435,7 +435,7 @@ static void updatePopulationData(MODEL * pso) {
 
 			memmove(pso->particle[i].informants_best_position_so_far,
 				pso->particle[i].position,
-				numberVariables * sizeof(float));
+				numberVariables * sizeof(double));
 		}
 
 		pso->average_fitness = pso->average_fitness + pso->particle[i].fitness;
@@ -592,7 +592,7 @@ static void updateParticles(unsigned int iter, MODEL * pso) {
 				memmove(
 					pso->particle[a].informants_best_position_so_far,
 					pso->particle[neighParticle].best_position_so_far,
-					numberVariables * sizeof(float));
+					numberVariables * sizeof(double));
 			}
 
 		} // Cycle neighbors
