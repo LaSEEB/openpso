@@ -12,7 +12,6 @@
 
 #include "functions.h"
 
-
 #ifndef M_PI
 	#define M_PI acos(-1.0)
 #endif
@@ -20,6 +19,12 @@
 #ifndef M_E
 	#define M_E 2.7182818284590452353602874713527
 #endif
+
+
+static const double griewank_m_d2[2][2] = GRIEWANK_M_D2;
+static const double griewank_m_d10[10][10] = GRIEWANK_M_D10;
+static const double griewank_m_d30[30][30] = GRIEWANK_M_D30;
+static const double griewank_m_d50[50][50] = GRIEWANK_M_D50;
 
 /// Sphere function
 double Sphere(double * vars, unsigned int nvars) {
@@ -194,24 +199,27 @@ double ShiftedQuadricWithNoise(double * vars, unsigned int nvars) {
 /// Rotated Griewank function
 double RotatedGriewank(double * vars, unsigned int nvars) {
 
-	const double m[50][50] = GRIEWANK_M_D50;
+	const double (*m)[nvars];
 	unsigned int i, j;
-	double fitness1, fitness2, fitness;
-	float rotated_vars[nvars];
+	double rotated_vars[nvars];
 
-	for (j = 0; j < nvars; ++j) {
-		rotated_vars[j] = 0.0;
-		for (i = 0; i < nvars; i++) {
-			rotated_vars[j] += m[i][j] * vars[i];
+	switch (nvars) {
+		case 2: m = griewank_m_d2; break;
+		case 10: m = griewank_m_d10; break;
+		case 30: m = griewank_m_d30; break;
+		case 50: m = griewank_m_d50; break;
+		default:
+			fprintf(stderr, "The specified number of variables/dimensions (%u)"
+				"is not supported by the '%s' function.\n", nvars, __func__);
+			return 0.0;
+	}
+
+	for (i = 0; i < nvars; ++i) {
+		rotated_vars[i] = 0.0;
+		for (j = 0; j < nvars; j++) {
+			rotated_vars[i] += (*(m + i))[j] * vars[i];
 		}
 	}
 
-	fitness1 = 0.0;
-	fitness2 = 1.0;
-	for (i = 0; i < nvars; ++i) {
-		fitness1 += (double) (vars[i] * vars[i]);
-		fitness2 *= (cos(vars[i] / sqrt(i + 1.0)));
-	}
-	fitness = 1 + (fitness1 / 4000) - fitness2;
-	return fitness;
+	return Griewank(rotated_vars, nvars);
 }
