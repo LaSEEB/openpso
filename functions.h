@@ -2,28 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <time.h>
-#include <math.h>
+#ifndef __FUNCTIONS_H_
+#define __FUNCTIONS_H_
 
-#include "randistrs.h"
-#include "mtwist.h"
-#include "definicoes.h"
-#include "functions_data.h"
+double Sphere(double * vars, unsigned int nvars);
+double Quadric(double * vars, unsigned int nvars);
+double Hyper(double * vars, unsigned int nvars);
+double Rastrigin(double * vars, unsigned int nvars);
+double Griewank(double * vars, unsigned int nvars);
+double Schaffer6(double * vars, unsigned int nvars);
+double Weierstrass(double * vars, unsigned int nvars);
+double Ackley(double * vars, unsigned int nvars);
+double ShiftedQuadricWithNoise(double * vars, unsigned int nvars);
+double RotatedGriewank(double * vars, unsigned int nvars);
 
-typedef long double (* SelFunc)(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-
-long double Sphere(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-long double Quadric(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-long double Hyper(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-long double Rastrigin(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-long double Griewank(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-long double Schaffer(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-long double Weierstrass(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-long double Ackley(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-long double ShiftedQuadricWithNoise(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-long double RotatedGriewank(PARTICLE position, unsigned int nvars, mt_state * prng_state);
-
-SelFunc getSelFunc(unsigned int problem);
+#endif

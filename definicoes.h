@@ -23,7 +23,7 @@ typedef struct {
 } NEIGHBORHOOD;
 
 /////////////////////////////////////////////////////// STRUCTURES
-typedef float PARTICLE[MAX_VARIABLES];
+typedef double PARTICLE[MAX_VARIABLES];
 
 typedef struct {
 	int x;

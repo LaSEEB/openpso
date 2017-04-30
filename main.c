@@ -34,6 +34,24 @@
 #define DEFAULT_PRNG_SEED 1234
 #define MAX_FILENAME_LEN 255
 
+typedef double (* SelFunc)(double * vars, unsigned int nvars);
+
+static SelFunc getSelFunc(unsigned int func) {
+	switch (func) {
+		case 1: return &Sphere;
+		case 2: return &Quadric;
+		case 3: return &Hyper;
+		case 4: return &Rastrigin;
+		case 5: return &Griewank;
+		case 6: return &Schaffer6;
+		case 7: return &Weierstrass;
+		case 8: return &Ackley;
+		case 9: return &ShiftedQuadricWithNoise;
+		case 10: return &RotatedGriewank;
+		default: return NULL;
+	}
+}
+
 // *************** Global Variables *****************
 
 // Known neighborhoods
@@ -323,7 +341,7 @@ static void initialize(MODEL * pso) {
 
 			// Initialize velocity for current variable of current particle
 			pso->particle[i].velocity[j] =
-				rds_luniform(&prng_states[0], -Xmax, Xmax) *
+				rds_luniform(&prng_states[0], -Xmax, Xmax) * // TODO Should not this be xmin,xmax?
 				(0.5 - rds_luniform(&prng_states[0], 0, 1.0));
 
 			// Set best position so far as current position
@@ -337,7 +355,7 @@ static void initialize(MODEL * pso) {
 
 		// Determine fitness for current particle
 		pso->particle[i].fitness =
-			evaluate(pso->particle[i].position, numberVariables, &prng_states[0]);
+			evaluate(pso->particle[i].position, numberVariables);
 
 		// Set my own fitness as best fitness so far
 		pso->particle[i].best_fitness_so_far =
@@ -507,7 +525,7 @@ static void updateParticlePV(MODEL * pso, int a, unsigned int iter) {
 
 	// Determine particle fitness for new position
 	pso->particle[a].fitness =
-		evaluate(pso->particle[a].position, numberVariables, &prng_states[tid]);
+		evaluate(pso->particle[a].position, numberVariables);
 
 	// Increment number of evaluations
 	pso->evaluations += 1;

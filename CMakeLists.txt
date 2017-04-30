@@ -20,9 +20,12 @@ add_subdirectory(libs)
 
 include_directories(libs/mtwist libs/iniparser)
 
+# Create functions library
+add_library(benchfuncs SHARED functions.c functions_prng.c)
+
 # Create executable
-add_executable(${PROJECT_NAME} main.c functions.c)
-target_link_libraries(${PROJECT_NAME} m mtwist iniparser)
+add_executable(${PROJECT_NAME} main.c)
+target_link_libraries(${PROJECT_NAME} m mtwist iniparser benchfuncs)
 
 if (${OPENMP_FOUND} AND ${USE_OPENMP})
 	set_target_properties(${PROJECT_NAME} PROPERTIES
