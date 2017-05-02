@@ -223,3 +223,8 @@ double RotatedGriewank(double * vars, unsigned int nvars) {
 
 	return Griewank(rotated_vars, nvars);
 }
+
+// Basic function used to test the internal noise-generating PRNG
+double RandomTest(double * vars, unsigned int nvars) {
+	return runif01(vars, nvars);
+}

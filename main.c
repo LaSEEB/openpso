@@ -341,7 +341,7 @@ static void initialize(MODEL * pso) {
 
 			// Initialize velocity for current variable of current particle
 			pso->particle[i].velocity[j] =
-				rds_luniform(&prng_states[0], -Xmax, Xmax) * // TODO Should not this be xmin,xmax?
+				rds_luniform(&prng_states[0], -Xmax, Xmax) *
 				(0.5 - rds_luniform(&prng_states[0], 0, 1.0));
 
 			// Set best position so far as current position

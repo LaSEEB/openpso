@@ -1,5 +1,6 @@
 #include <math.h>
 #include <inttypes.h>
+#include <time.h>
 
 #define norm 2.328306549295728e-10
 #define m1   4294967087.0
@@ -9,20 +10,19 @@
 #define a21      527612.0
 #define a23n    1370589.0
 
+/* Separate state into sub-states. This is done in an arbitrary fashion,
+ * but must follow these rules:
+ * - s10, s11, s12 must be integers in [0, m1 - 1] and not all 0.
+ * - s20, s21, s22 must be integers in [0, m2 - 1] and not all 0. */
+static double MRG32k3a(
+	double s10, double s11, double s12, double s20, double s21, double s22) {
 
-
-static double MRG32k3a(double state) {
-
-	/* Separate state into sub-states. This is done in an arbitrary fashion,
-	 * but must follow these rules:
-	 * - s10, s11, s12 must be integers in [0, m1 - 1] and not all 0.
-	 * - s20, s21, s22 must be integers in [0, m2 - 1] and not all 0. */
-	double s10 = (double) ((long) (fabs(log(state)) + 1.0) % (long) m1);
-	double s11 = (double) ((long) (fabs(exp(state)) + 500.0) % (long) m1);
-	double s12 = (double) ((long) (sqrt(fabs(state)) + 2000.0) % (long) m1);
-	double s20 = (double) ((long) (fabs(tanh(state)) + 5.0) % (long) m2);
-	double s21 = (double) ((long) (fabs(log10(state)) + 750.0) % (long) m2);
-	double s22 = (double) ((long) (fabs(state) + 8000.0) % (long) m2);
+	s10 = (double) (((long) s10) % ((long) m1));
+	s11 = (double) (((long) s11) % ((long) m1));
+	s12 = (double) (((long) s12) % ((long) m1));
+	s20 = (double) (((long) s10) % ((long) m2));
+	s21 = (double) (((long) s11) % ((long) m2));
+	s22 = (double) (((long) s12) % ((long) m2));
 
 	long k;
 	double p1, p2;
@@ -55,15 +55,62 @@ static double MRG32k3a(double state) {
 
 double runif01(double * vars, unsigned int nvars) {
 
-	double seed = vars[0];
-	unsigned int i = 0;
-	uint64_t lseed;
-	for (i = 1; i < nvars; ++i) {
-		seed += vars[i] / (i + 1);
+	// Union variable used to mix seeds
+	union {
+		uint64_t s64;
+		struct {
+			uint32_t low;
+			uint32_t high;
+		} s32;
+		double sd;
+	} seed;
+
+	// Maximum cycles for mixing seeds
+	unsigned int maxfor = (nvars > 6) ? nvars : 6;
+
+	// Entropy from random memory addresses
+	uintptr_t masks[6] = {(uintptr_t) &seed, (uintptr_t) &MRG32k3a,
+		(uintptr_t) &runif01, (uintptr_t) &vars, (uintptr_t) &nvars,
+		(uintptr_t) &maxfor};
+
+	// Seeds vector for MRG32k3a PRNG
+	double seeds[6] = {1.0, 3.0, 1.0, 6.0, 4.0, 2.0};
+
+	// Seed mixing
+	for (unsigned int i = 0; i < maxfor; ++i) {
+
+		// Initialize union variable with values from the given variables,
+		// the iteration count and previous value in seeds vector
+		seed.sd = vars[i % nvars] * (i + 1) + seeds[i % 6];
+
+		// Add entropy from current time and memory addresses
+		seed.s64 ^= ((uint64_t) time(NULL)) ^ ((uint64_t) masks[i % 6]);
+
+		// Xor-Shift PRNG for further mixing
+		seed.s64 ^= (seed.s64 << 21);
+		seed.s64 ^= (seed.s64 >> 35);
+		seed.s64 ^= (seed.s64 << 4);
+
+		// Hash low bits
+		seed.s32.low  = (seed.s32.low + 0x7ed55d16) + (seed.s32.low << 12);
+		seed.s32.low  = (seed.s32.low + 0x165667b1) + (seed.s32.low << 5);
+		seed.s32.low  = (seed.s32.low ^ 0xc761c23c) ^ (seed.s32.low >> 19);
+		seed.s32.low  = (seed.s32.low + 0xd3a2646c) ^ (seed.s32.low << 9);
+		seed.s32.low  = (seed.s32.low + 0xfd7046c5) + (seed.s32.low << 3);
+		seed.s32.low  = (seed.s32.low ^ 0xb55a4f09) ^ (seed.s32.low >> 16);
+
+		// Hash high bits
+		seed.s32.high = (seed.s32.high ^ 61) ^ (seed.s32.high >> 16);
+		seed.s32.high = seed.s32.high + (seed.s32.high << 3);
+		seed.s32.high = seed.s32.high ^ (seed.s32.high >> 4);
+		seed.s32.high = seed.s32.high * 0x27d4eb2d;
+		seed.s32.high = seed.s32.high ^ (seed.s32.high >> 15);
+
+		// Mix low and high bits, convert to double and add to current seed
+		// vector value
+		seeds[i % 6] += (double) (seed.s32.low ^ seed.s32.high);
 	}
-	lseed = (uint64_t) seed;
-	lseed ^= (lseed << 21);
-	lseed ^= (lseed >> 35);
-	lseed ^= (lseed << 4);
-	return MRG32k3a((double) lseed * seed);
+
+	// Return uniform value between 0 and 1 using the MRG32k3a PRNG
+	return MRG32k3a(seeds[0], seeds[1], seeds[2], seeds[3], seeds[4], seeds[5]);
 }
