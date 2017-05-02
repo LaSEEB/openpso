@@ -527,9 +527,6 @@ static void updateParticlePV(MODEL * pso, int a, unsigned int iter) {
 	pso->particle[a].fitness =
 		evaluate(pso->particle[a].position, numberVariables);
 
-	// Increment number of evaluations
-	pso->evaluations += 1;
-
 }
 
 /**
@@ -540,22 +537,21 @@ static void updateParticlePV(MODEL * pso, int a, unsigned int iter) {
  */
 static void updateParticles(unsigned int iter, MODEL * pso) {
 
-	unsigned int a, n;
-	int i, j, ii, jj;
-	int neighParticle;
-	int update;
+	unsigned int evals = 0;
 
 	// Cycle through particles
 #ifdef _OPENMP
-	#pragma omp parallel for
+	#pragma omp parallel for reduction(+:evals)
 #endif
-	for (a = 0; a < popSize; ++a) {
-
+	for (unsigned int a = 0; a < popSize; ++a) {
 		// By default particle update is set to 0 (only relevant to SS-PSO)
-		update = 0;
+		int update = 0;
 
 		// Cycle through neighbors
-		for (n = 0; n < neighbors->num_neighs; ++n) {
+		for (unsigned int n = 0; n < neighbors->num_neighs; ++n) {
+
+			int i, j, ii, jj;
+			int neighParticle;
 
 			i = pso->particle[a].x + neighbors->neighs[n].dx;
 			j = pso->particle[a].y + neighbors->neighs[n].dy;
@@ -597,15 +593,23 @@ static void updateParticles(unsigned int iter, MODEL * pso) {
 
 		} // Cycle neighbors
 
-		// Typical PSO update strategy: update all
-		if (algorithm == 1)
+		// Update current particle?
+		if (
+			// Regular PSO update strategy: always update
+			(algorithm == 1)
+			// SS-PSO update strategy: only worst and its neighbors are updated
+			|| ((algorithm == 2) && (update == 1)))
+		{
+			// Update current particle
 			updateParticlePV(pso, a, iter);
+			// Increment thread-local number of evaluations
+			evals++;
+		}
 
-		// SS-PSO update strategy: only the worst and its neighbors are updated
-		if ((algorithm == 2) && (update == 1))
-			updateParticlePV(pso, a, iter);
+	 } // End parallel for - cycle particles
 
-	 } // Cycle particles
+	 // Increment global number of evaluations
+	 pso->evaluations += evals;
 
 }
 
