@@ -9,9 +9,9 @@ Libs=
 PrivateResource=
 ResourceIncludes=
 MakeIncludes=
-Compiler=
+Compiler=-fopenmp_@@_-DMT_GENERATE_CODE_IN_HEADER=0_@@_
 CppCompiler=
-Linker=
+Linker=-fopenmp_@@_"%ProgramFiles(x86)%/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/libgomp.dll.a"_@@_
 IsCpp=0
 Icon=
 ExeOutput=
@@ -28,8 +28,8 @@ Folders=
 IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=0
-CompilerSettings=0000000000000000000000000
-UnitCount=12
+CompilerSettings=00000000a1110000000000000
+UnitCount=15
 
 [VersionInfo]
 Major=1
@@ -151,7 +151,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit13]
-FileName=libs\iniparser\dictionary.h
+FileName=functions_data.h
 CompileCpp=0
 Folder=
 Compile=1
@@ -161,7 +161,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit14]
-FileName=libs\iniparser\iniparser.c
+FileName=functions_prng.c
 CompileCpp=0
 Folder=
 Compile=1
@@ -171,7 +171,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit15]
-FileName=libs\iniparser\iniparser.h
+FileName=functions_prng.h
 CompileCpp=0
 Folder=
 Compile=1

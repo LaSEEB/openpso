@@ -4,14 +4,14 @@
 CPP      = g++.exe
 CC       = gcc.exe
 WINDRES  = windres.exe
-OBJ      = main.o functions.o libs/mtwist/mtwist.o libs/mtwist/randistrs.o libs/iniparser/dictionary.o libs/iniparser/iniparser.o
-LINKOBJ  = main.o functions.o libs/mtwist/mtwist.o libs/mtwist/randistrs.o libs/iniparser/dictionary.o libs/iniparser/iniparser.o
-LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib" -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc
+OBJ      = main.o functions.o libs/mtwist/mtwist.o libs/mtwist/randistrs.o libs/iniparser/dictionary.o libs/iniparser/iniparser.o functions_prng.o
+LINKOBJ  = main.o functions.o libs/mtwist/mtwist.o libs/mtwist/randistrs.o libs/iniparser/dictionary.o libs/iniparser/iniparser.o functions_prng.o
+LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib" -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc -fopenmp "%ProgramFiles(x86)%/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/libgomp.dll.a"
 INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"libs/mtwist" -I"libs/iniparser"
 CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++" -I"libs/mtwist" -I"libs/iniparser"
 BIN      = SSPSO.exe
-CXXFLAGS = $(CXXINCS) 
-CFLAGS   = $(INCS) 
+CXXFLAGS = $(CXXINCS) -std=c99 -w -Wall -Wextra
+CFLAGS   = $(INCS) -std=c99 -w -Wall -Wextra -fopenmp -DMT_GENERATE_CODE_IN_HEADER=0
 RM       = rm.exe -f
 
 .PHONY: all all-before all-after clean clean-custom
@@ -41,3 +41,6 @@ libs/iniparser/dictionary.o: libs/iniparser/dictionary.c
 
 libs/iniparser/iniparser.o: libs/iniparser/iniparser.c
 	$(CC) -c libs/iniparser/iniparser.c -o libs/iniparser/iniparser.o $(CFLAGS)
+
+functions_prng.o: functions_prng.c
+	$(CC) -c functions_prng.c -o functions_prng.o $(CFLAGS)
