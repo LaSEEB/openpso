@@ -757,8 +757,15 @@ int main(int argc, char* argv[]) {
 		best_so_far[successes / 2], best_so_far[0], best_so_far[successes - 1]);
 
 	qsort(crit_evals, n_runs, sizeof(unsigned int), cmpuint);
-	printf("[EvalsCrit] Median = %10u | Min = %10u | Max = %10u\n\n",
+	printf("[EvalsCrit] Median = %10u | Min = %10u | Max = %10u\n",
 		crit_evals[successes / 2], crit_evals[0], crit_evals[successes - 1]);
+
+	printf("[Successes] %u/%u (%2.2f%%)\n\n", successes, n_runs,
+		100.0 * (float) successes / (float) n_runs);
+
+	// printf("\n%10.5g\t%10.5g\t%10.5g\n%10u\t%10u\t%10u\n",
+	// 	best_so_far[successes / 2], best_so_far[0], best_so_far[successes - 1],
+	// 	crit_evals[successes / 2], crit_evals[0], crit_evals[successes - 1]);
 
 	// Release PRNG states
 	free(prng_states);
