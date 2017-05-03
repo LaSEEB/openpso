@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
+#include <limits.h>
 #ifdef _OPENMP
 	#include <omp.h>
 #endif
@@ -637,6 +638,7 @@ int main(int argc, char* argv[]) {
 	unsigned int counter = 0;
 	long double averageBestSoFar[max_evaluations / 100];
 	unsigned int crit_evals[n_runs];
+	unsigned int successes = 0;
 	double best_so_far[n_runs];
 	int flag;
 
@@ -701,6 +703,7 @@ int main(int argc, char* argv[]) {
 			if ((pso->best_so_far < crit) && (flag == 0)) {
 				crit_evals[i] = pso->evaluations;
 				flag = 1;
+				successes++;
 				// Stop current run if I'm not supposed to keep going
 				if (!crit_keep_going) break;
 			}
@@ -709,7 +712,9 @@ int main(int argc, char* argv[]) {
 
 		// If the number of evaluations was not enough to get below the stop
 		// criteria, set it to the maximum number of performed evaluations
-		if (flag == 0) crit_evals[i] = max_evaluations;
+		if (flag == 0) {
+			crit_evals[i] = UINT_MAX;
+		}
 
 		// Inform user of current run performance
 		printf("Run %4u | BestFit = %10.5g | AvgFit = %10.5g | "
@@ -745,14 +750,15 @@ int main(int argc, char* argv[]) {
 	fclose(out);
 
 	// Show fitness statistics over all runs
-	qsort(best_so_far, n_runs, sizeof(double), cmpdbl);
 	printf("\nSTATISTICS\n----------\n");
+
 	qsort(best_so_far, n_runs, sizeof(double), cmpdbl);
 	printf("[Fitness  ] Median = %10.5g | Min = %10.5g | Max = %10.5g\n",
-		best_so_far[n_runs / 2], best_so_far[0], best_so_far[n_runs - 1]);
+		best_so_far[successes / 2], best_so_far[0], best_so_far[successes - 1]);
+
 	qsort(crit_evals, n_runs, sizeof(unsigned int), cmpuint);
 	printf("[EvalsCrit] Median = %10u | Min = %10u | Max = %10u\n\n",
-		crit_evals[n_runs / 2], crit_evals[0], crit_evals[n_runs - 1]);
+		crit_evals[successes / 2], crit_evals[0], crit_evals[successes - 1]);
 
 	// Release PRNG states
 	free(prng_states);
