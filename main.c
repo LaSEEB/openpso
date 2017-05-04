@@ -34,6 +34,8 @@
 #define DEFAULT_INPUT_FILE "input.ini"
 #define DEFAULT_PRNG_SEED 1234
 #define MAX_FILENAME_LEN 255
+/// Maximum length for strings containing unsigned integers
+#define MAXUISLEN 11
 
 typedef double (* SelFunc)(double * vars, unsigned int nvars);
 
@@ -131,18 +133,26 @@ static double crit;
 // Keep going until max_evaluations after stop criterion is meet?
 static int crit_keep_going;
 
+// Helper function for comparing two doubles
 static int cmpdbl(const void * a, const void * b) {
-
 	if (*(double*) a > *(double*) b) return 1;
 	else if (*(double*) a < *(double*) b) return -1;
 	else return 0;
 }
 
+// Helper function for comparing two unsigned integers
 static int cmpuint(const void * a, const void * b) {
-
 	if (*(unsigned int*) a > *(unsigned int*) b) return 1;
 	else if (*(unsigned int*) a < *(unsigned int*) b) return -1;
 	else return 0;
+}
+
+// Helper function for converting unsigned integer to string
+// Cannot be called by threaded code
+static char * uint2str(unsigned int evals) {
+	static char str[MAXUISLEN]; // Not thread-safe
+	snprintf(str, MAXUISLEN * sizeof(char), "%u", evals);
+	return str;
 }
 
 /**
@@ -635,6 +645,9 @@ int main(int argc, char* argv[]) {
 	// Iteration count for current run
 	unsigned int iter;
 
+	// Medians for fitness and evaluations
+	float fitmedian, evalsmedian;
+
 	unsigned int counter = 0;
 	long double averageBestSoFar[max_evaluations / 100];
 	unsigned int crit_evals[n_runs];
@@ -718,9 +731,9 @@ int main(int argc, char* argv[]) {
 
 		// Inform user of current run performance
 		printf("Run %4u | BestFit = %10.5g | AvgFit = %10.5g | "
-			"EvalsCrit = %6u | EvalsAll = %6u | Iters = %6u\n",
-			i, (double) pso->best_so_far, (double) pso->average_fitness,
-			crit_evals[i], pso->evaluations, iter);
+			"Evals = %10s\n", i, (double) pso->best_so_far,
+			(double) pso->average_fitness,
+			flag ? uint2str(crit_evals[i]) : "--");
 
 		// Keep best so far for current run
 		best_so_far[i] = (double) pso->best_so_far;
@@ -749,23 +762,29 @@ int main(int argc, char* argv[]) {
 	}
 	fclose(out);
 
-	// Show fitness statistics over all runs
+	// Show statistics over all runs
 	printf("\nSTATISTICS\n----------\n");
+	printf("          \t %11s \t %11s \t %11s\n", "Median", "Min", "Max");
 
+	// Fitness statistics
 	qsort(best_so_far, n_runs, sizeof(double), cmpdbl);
-	printf("[Fitness  ] Median = %10.5g | Min = %10.5g | Max = %10.5g\n",
-		best_so_far[successes / 2], best_so_far[0], best_so_far[successes - 1]);
+	MEDIAN(best_so_far, n_runs, fitmedian);
 
-	qsort(crit_evals, n_runs, sizeof(unsigned int), cmpuint);
-	printf("[EvalsCrit] Median = %10u | Min = %10u | Max = %10u\n",
-		crit_evals[successes / 2], crit_evals[0], crit_evals[successes - 1]);
+	// Evaluation statistics
+	printf("Fitness = \t %10.5e \t %10.5e \t %10.5e\n",
+		fitmedian, best_so_far[0], best_so_far[n_runs - 1]);
+	if (successes) {
+		qsort(crit_evals, n_runs, sizeof(unsigned int), cmpuint);
+		MEDIAN(crit_evals, successes, evalsmedian);
+		printf("Evals   = \t %11.1f \t %11u \t %11u\n",
+			evalsmedian, crit_evals[0], crit_evals[successes - 1]);
+	} else {
+		printf("Evals   = \t %11s \t %11s \t %11s\n", "--", "--", "--");
+	}
 
-	printf("[Successes] %u/%u (%2.2f%%)\n\n", successes, n_runs,
+	// Number and percentage of successes
+	printf("\nSuccess = %u/%u (%2.2f%%)\n\n", successes, n_runs,
 		100.0 * (float) successes / (float) n_runs);
-
-	// printf("\n%10.5g\t%10.5g\t%10.5g\n%10u\t%10u\t%10u\n",
-	// 	best_so_far[successes / 2], best_so_far[0], best_so_far[successes - 1],
-	// 	crit_evals[successes / 2], crit_evals[0], crit_evals[successes - 1]);
 
 	// Release PRNG states
 	free(prng_states);

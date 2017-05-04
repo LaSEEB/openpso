@@ -73,6 +73,19 @@ typedef struct {
 	do { \
 		fprintf(stderr, err_msg, ##__VA_ARGS__); \
 		exit(EXIT_FAILURE); \
-	} while(0)
+	} while (0)
 
 #endif
+
+/**
+ * Macro for calculating median. Assumes sorted vector.
+ *
+ * @param[in] vec Sorted numeric vector.
+ * @param[in] n Number of elements in vector.
+ * @param[out] res Median of numeric elements in vector.
+ */
+#define MEDIAN(vec, n, res) \
+	do { \
+		if (n % 2 == 0) res = (vec[n / 2] + vec[n / 2 - 1]) / 2; \
+		else res = vec[n / 2]; \
+	} while (0)
