@@ -23,9 +23,13 @@ include_directories(libs/mtwist libs/iniparser)
 # Create functions library
 add_library(benchfuncs SHARED functions.c functions_prng.c)
 
+# Create PSO library
+add_library(pso SHARED pso.c)
+target_link_libraries(pso m mtwist)
+
 # Create executable
 add_executable(${PROJECT_NAME} main.c)
-target_link_libraries(${PROJECT_NAME} m mtwist iniparser benchfuncs)
+target_link_libraries(${PROJECT_NAME} m mtwist iniparser benchfuncs pso)
 
 if (${OPENMP_FOUND} AND ${USE_OPENMP})
 	set_target_properties(${PROJECT_NAME} PROPERTIES

@@ -27,8 +27,8 @@
 #include "iniparser.h"
 
 // SSPSO headers
-#include "definicoes.h"
 #include "functions.h"
+#include "pso.h"
 
 // Constants
 #define DEFAULT_INPUT_FILE "input.ini"
@@ -37,9 +37,34 @@
 /// Maximum length for strings containing unsigned integers
 #define MAXUISLEN 11
 
-typedef double (* SelFunc)(double * vars, unsigned int nvars);
+// Useful macros
 
-static SelFunc getSelFunc(unsigned int func) {
+/**
+ * Macro for terminating program with error condition.
+ *
+ * @param[in] err_msg Error message.
+ * @param[in] ... Message parameters.
+ */
+#define ERROR_EXIT(err_msg, ...) \
+	do { \
+		fprintf(stderr, err_msg, ##__VA_ARGS__); \
+		exit(EXIT_FAILURE); \
+	} while (0)
+
+/**
+ * Macro for calculating median. Assumes sorted vector.
+ *
+ * @param[in] vec Sorted numeric vector.
+ * @param[in] n Number of elements in vector.
+ * @param[out] res Median of numeric elements in vector.
+ */
+#define MEDIAN(vec, n, res) \
+	do { \
+		if (n % 2 == 0) res = (vec[n / 2] + vec[n / 2 - 1]) / 2; \
+		else res = vec[n / 2]; \
+	} while (0)
+
+static pso_func getSelFunc(unsigned int func) {
 	switch (func) {
 		case 1: return &Sphere;
 		case 2: return &Quadric;
@@ -57,81 +82,21 @@ static SelFunc getSelFunc(unsigned int func) {
 
 // *************** Global Variables *****************
 
-// Known neighborhoods
 
-/// Moore neighborhood
-static const NEIGHBORHOOD neighbors_moore = {
-	.num_neighs = 9,
-	.neighs = (NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 1}, {1, 0},
-		{1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}}};
-
-/// Von Neumann neighborhood
-static const NEIGHBORHOOD neighbors_vn = {
-	.num_neighs = 5,
-	.neighs = (NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}};
-
-/// Ring neighborhood (requires max_y == 1)
-static const NEIGHBORHOOD neighbors_ring = {
-	.num_neighs = 3,
-	.neighs = (NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
 
 /// Seed for pseudo-random number generator.
 static unsigned int prng_seed;
 /// File containing PSO parameters.
 static char input_file[MAX_FILENAME_LEN];
-/// Function/problem to solve.
-static SelFunc evaluate;
-/// Neighborhood used in PSO.
-static const NEIGHBORHOOD * neighbors;
-/// Population size.
-static unsigned int popSize;
+
 /// Number of threads.
 static unsigned int num_threads;
-/// PRNG states
-static mt_state * prng_states;
-
-// PSO parameters
-
-//
-static unsigned int max_x, max_y;
-//Maximum number of iterations
-static unsigned int max_t;
-// Maximum number of evaluations
-static unsigned int max_evaluations;
+/// Problem to solve
+unsigned int problem;
 // Number of runs
-static unsigned int n_runs;
-// PSO algorithm to use
-static unsigned int algorithm;
-//
-static int gbest;
-//
-static unsigned int neighborhood;
-//
-static unsigned int problem;
-//
-static double Xmax;
-//
-static double Vmax;
-//
-static double chi;
-//
-static double omega;
-//
-static double c;
-//
-static unsigned int numberVariables;
-//
-static unsigned int iWeightStrategy, cStrategy;
-//
-static int assyInitialization;
-//
-static double initialXmin;
-//
-static double initialXmax;
-/// Stop criterion
-static double crit;
-// Keep going until max_evaluations after stop criterion is meet?
-static int crit_keep_going;
+unsigned int n_runs;
+// Maximum number of evaluations
+unsigned int max_evaluations;
 
 // Helper function for comparing two doubles
 static int cmpdbl(const void * a, const void * b) {
@@ -161,10 +126,11 @@ static char * uint2str(unsigned int evals) {
  * @param[in] argc Number of program arguments.
  * @param[in] argv Program arguments. Argument at index 1 is the file containing
  * the PSO parameters. Argument at index 2 is the PRNG seed.
+ * @param[out] params Pointer to PSO parameters.
  * @return `EXIT_SUCCESS` if program executes successfully, `EXIT_FAILURE`
  * otherwise.
  */
-static void parse_params(int argc, char * argv[]) {
+static void parse_params(int argc, char * argv[], PARAMETERS * params) {
 
 	// INI object
 	dictionary * ini;
@@ -190,437 +156,63 @@ static void parse_params(int argc, char * argv[]) {
 
 	// Try to open PSO parameters file
 	ini = iniparser_load(input_file);
-	if (!ini) ERROR_EXIT("Unable to parse input file '%s'\n", input_file);
+	if (!ini) ERROR_EXIT("Unable to parse input file '%s'", input_file);
 
 	// Read PSO parameters file
 
-	max_x = (unsigned int) iniparser_getint(ini, "pso:max_x", 0);
-	if (max_x < 1)
-		ERROR_EXIT("Invalid input parameter: max_x\n");
+	params->max_x = (unsigned int) iniparser_getint(ini, "pso:max_x", 0);
 
-	max_y = (unsigned int) iniparser_getint(ini, "pso:max_y", 0);
-	if (max_y < 1)
-		ERROR_EXIT("Invalid input parameter: max_y\n");
+	params->max_y = (unsigned int) iniparser_getint(ini, "pso:max_y", 0);
 
 	n_runs = (unsigned int) iniparser_getint(ini, "pso:n_runs", 0);
 	if (n_runs < 1)
-		ERROR_EXIT("Invalid input parameter: n_runs\n");
+		ERROR_EXIT("Invalid input parameter: n_runs");
 
-	max_t = (unsigned int) iniparser_getint(ini, "pso:max_t", 0);
-	if (max_t < 1)
-		ERROR_EXIT("Invalid input parameter: max_t\n");
+	params->max_t = (unsigned int) iniparser_getint(ini, "pso:max_t", 0);
 
 	max_evaluations = (unsigned int) iniparser_getint(ini, "pso:max_evaluations", 0);
 	if (max_evaluations < 1)
-		ERROR_EXIT("Invalid input parameter: max_evaluations\n");
+		ERROR_EXIT("Invalid input parameter: max_evaluations");
 
-	algorithm = (unsigned int) iniparser_getint(ini, "pso:algorithm", 0);
-	if ((algorithm < 1) || (algorithm > 2))
-		ERROR_EXIT("Invalid input parameter: algorithm\n");
+	params->algorithm = (unsigned int) iniparser_getint(ini, "pso:algorithm", 0);
 
-	gbest = iniparser_getboolean(ini, "pso:gbest", -1);
-	if (gbest == -1)
-		ERROR_EXIT("Invalid input parameter: gbest\n");
+	params->gbest = iniparser_getboolean(ini, "pso:gbest", -1);
 
 	// Neighborhood
-	neighborhood = (unsigned int) iniparser_getint(ini, "pso:neighborhood", 3);
-	if (neighborhood == 0) { // Moore
-		neighbors = &neighbors_moore;
-	} else if (neighborhood == 1) { // VN
-		neighbors = &neighbors_vn;
-	} else if (neighborhood == 2) { // Ring (requires max_y == 1)
-		neighbors = &neighbors_ring;
-		if (max_y != 1) {
-			max_x = max_x * max_y;
-			max_y = 1;
-			fprintf(stderr, "WARNING: 1D neighborhood selected, setting "
-				"max_x==%u and max_y==%u\n", max_x, max_y);
-		}
-	} else {
-		ERROR_EXIT("Invalid input parameter: neighborhood\n");
-	}
+	params->neighborhood = (unsigned int) iniparser_getint(ini, "pso:neighborhood", 3);
 
 	problem = (unsigned int) iniparser_getint(ini, "pso:problem", 0);
 	if ((problem < 1) || (problem > 10))
-		ERROR_EXIT("Invalid input parameter: problem\n");
+		ERROR_EXIT("Invalid input parameter: problem");
 
-	Xmax = iniparser_getdouble(ini, "pso:xmax", -DBL_MAX);
-	if (Xmax < -DBL_MAX + 0.1)
-		ERROR_EXIT("Invalid input parameter: Xmax\n");
+	params->Xmax = iniparser_getdouble(ini, "pso:xmax", -DBL_MAX);
 
-	Vmax = iniparser_getdouble(ini, "pso:vmax", -DBL_MAX);
-	if (Vmax < -DBL_MAX + 0.1)
-		ERROR_EXIT("Invalid input parameter: Vmax\n");
+	params->Vmax = iniparser_getdouble(ini, "pso:vmax", -DBL_MAX);
 
-	chi = iniparser_getdouble(ini, "pso:chi", -DBL_MAX);
-	if (chi < -DBL_MAX + 0.1)
-		ERROR_EXIT("Invalid input parameter: chi\n");
+	params->chi = iniparser_getdouble(ini, "pso:chi", -DBL_MAX);
 
-	omega = iniparser_getdouble(ini, "pso:omega", -DBL_MAX);
-	if (omega < -DBL_MAX + 0.1)
-		ERROR_EXIT("Invalid input parameter: omega\n");
+	params->omega = iniparser_getdouble(ini, "pso:omega", -DBL_MAX);
 
-	c = iniparser_getdouble(ini, "pso:c", -DBL_MAX);
-	if (c < -DBL_MAX + 0.1)
-		ERROR_EXIT("Invalid input parameter: c\n");
+	params->c = iniparser_getdouble(ini, "pso:c", -DBL_MAX);
 
-	numberVariables = (unsigned int) iniparser_getint(ini, "pso:numbervariables", 0);
-	if (numberVariables < 1)
-		ERROR_EXIT("Invalid input parameter: numberVariables\n");
+	params->nvars = (unsigned int) iniparser_getint(ini, "pso:numbervariables", 0);
 
-	iWeightStrategy = (unsigned int) iniparser_getint(ini, "pso:iweightstrategy", 2);
-	if (iWeightStrategy == 2)
-		ERROR_EXIT("Invalid input parameter: iWeightStrategy\n");
+	params->iWeightStrategy = (unsigned int) iniparser_getint(ini, "pso:iweightstrategy", 2);
 
-	cStrategy = (unsigned int) iniparser_getint(ini, "pso:cstrategy", 2);
-	if (cStrategy == 2)
-		ERROR_EXIT("Invalid input parameter: cStrategy\n");
+	params->cStrategy = (unsigned int) iniparser_getint(ini, "pso:cstrategy", 2);
 
-	assyInitialization = iniparser_getboolean(ini, "pso:assyinitialization", -1);
-	if (assyInitialization == -1)
-		ERROR_EXIT("Invalid input parameter: assyInitialization\n");
+	params->assyInitialization = iniparser_getboolean(ini, "pso:assyinitialization", -1);
 
-	initialXmin = iniparser_getdouble(ini, "pso:initialxmin", -DBL_MAX);
-	if (initialXmin < -DBL_MAX + 0.1)
-		ERROR_EXIT("Invalid input parameter: initialXmin\n");
+	params->initialXmin = iniparser_getdouble(ini, "pso:initialxmin", -DBL_MAX);
 
-	initialXmax = iniparser_getdouble(ini, "pso:initialxmax", -DBL_MAX);
-	if (initialXmax < -DBL_MAX + 0.1)
-		ERROR_EXIT("Invalid input parameter: initialXmax\n");
+	params->initialXmax = iniparser_getdouble(ini, "pso:initialxmax", -DBL_MAX);
 
-	crit = iniparser_getdouble(ini, "pso:crit", -DBL_MAX);
-	if (crit < -DBL_MAX + 0.1)
-		ERROR_EXIT("Invalid input parameter: crit\n");
+	params->crit = iniparser_getdouble(ini, "pso:crit", -DBL_MAX);
 
- 	crit_keep_going = iniparser_getboolean(ini, "pso:crit_keep_going", -1);
-	if (crit_keep_going == -1)
-		ERROR_EXIT("Invalid input parameter: crit_keep_going\n");
-
-	// Determine population size based on grid size
-	popSize = max_x * max_y;
+ 	params->crit_keep_going = iniparser_getboolean(ini, "pso:crit_keep_going", -1);
 
 	// Release dictionary object
 	iniparser_freedict(ini);
-
-}
-
-/**
- * Initialize PSO model.
- *
- * @param[in,out] PSO model to initialize.
- */
-static void initialize(MODEL * pso) {
-
-	unsigned int i, j, z;
-	float xmin, xmax;
-
-	// Initialize cells and particles
-	z = 0;
-	for (i = 0; i < max_x; ++i){
-		for (j = 0; j < max_y; ++j){
-			// Set cell as occupied (particle is the id)
-			pso->cell[i][j].particle = z;
-			// Set particle default position
-			pso->particle[z].x = i;
-			pso->particle[z].y = j;
-			// Increment id
-			z = z + 1;
-		}
-	}
-
-	// Set initial position bounds
-	if (assyInitialization == 1) {
-		// Assymetric initialization of the population
-		xmin = initialXmin;
-		xmax = initialXmax;
-	} else {
-		// Normal initialization
-		xmin = -Xmax;
-		xmax = Xmax;
-	}
-
-	//Initialize position and velocity of each particle
-	for (i = 0; i < popSize; ++i) {
-
-		// Initialize position and velocity for each variable of the current
-		// particle
-		for (j = 0;  j < numberVariables; ++j) {
-
-			// Initialize position for current variable of current particle
-			pso->particle[i].position[j] =
-				rds_luniform(&prng_states[0], xmin, xmax);
-
-			// Initialize velocity for current variable of current particle
-			pso->particle[i].velocity[j] =
-				rds_luniform(&prng_states[0], -Xmax, Xmax) *
-				(0.5 - rds_luniform(&prng_states[0], 0, 1.0));
-
-			// Set best position so far as current position
-			pso->particle[i].best_position_so_far[j] =
-				pso->particle[i].position[j];
-
-			// Set best informat so far as myself
-			pso->particle[i].informants_best_position_so_far[j] =
-				pso->particle[i].position[j];
-		}
-
-		// Determine fitness for current particle
-		pso->particle[i].fitness =
-			evaluate(pso->particle[i].position, numberVariables);
-
-		// Set my own fitness as best fitness so far
-		pso->particle[i].best_fitness_so_far =
-			pso->particle[i].fitness;
-
-		// Set me as the best informant so far
-		pso->particle[i].informants_best_fitness_so_far =
-			pso->particle[i].fitness;
-	}
-
-	// Initialize remaining PSO variables to their defaults
-	pso->best_so_far = pso->particle[0].fitness;
-	pso->best_so_far_id = 0;
-	pso->evaluations = 0;
-	pso->minFitness = pso->particle[0].fitness;
-	pso->worst_id = 0;
-
-}
-
-/**
- * Update population data. Let particles know about particle with
- * best and worst fitness in the population and calculate the average fitness
- * in the population.
- *
- * @param[in,out] PSO model to update.
- */
-static void updatePopulationData(MODEL * pso) {
-
-	// Aux. variables
-	unsigned int i;
-
-	// Reset best and worst fitnesses
-	pso->best_fitness = pso->particle[0].fitness;
-	pso->worst_fitness = 0;
-	pso->average_fitness = 0;
-
-	// Cycle through particles
-	for (i = 0; i < popSize; ++i) {
-
-		// Updates worst in population
-		if (pso->particle[i].fitness > pso->worst_fitness) {
-			pso->worst_fitness = pso->particle[i].fitness;
-			pso->worst_id = i;
-		}
-
-		// Updates best_so_far in population
-		if (pso->particle[i].fitness < pso->best_so_far) {
-			pso->best_so_far = pso->particle[i].fitness;
-			memmove(pso->best_position_so_far,
-				pso->particle[i].position,
-				numberVariables * sizeof(double));
-		}
-
-		// Updates best in current population
-		if (pso->particle[i].fitness < pso->best_fitness) {
-			pso->best_fitness = pso->particle[i].fitness;
-			memmove(pso->best_position,
-				pso->particle[i].position,
-				numberVariables * sizeof(double));
-		}
-
-		// Updates particle's best position
-		if (pso->particle[i].fitness < pso->particle[i].best_fitness_so_far) {
-			pso->particle[i].best_fitness_so_far = pso->particle[i].fitness;
-			memmove(pso->particle[i].best_position_so_far,
-				pso->particle[i].position,
-				numberVariables * sizeof(double));
-
-		}
-
-		// Updates best informant
-		if (pso->particle[i].fitness <
-				pso->particle[i].informants_best_fitness_so_far) {
-
-			pso->particle[i].informants_best_fitness_so_far =
-				pso->particle[i].fitness;
-
-			memmove(pso->particle[i].informants_best_position_so_far,
-				pso->particle[i].position,
-				numberVariables * sizeof(double));
-		}
-
-		pso->average_fitness = pso->average_fitness + pso->particle[i].fitness;
-	}
-
-	// Determine average fitness in the population
-	pso->average_fitness = pso->average_fitness / popSize;
-}
-
-/**
- * Update position and velocity of a particle.
- *
- * @param[in,out] PSO model containing particles to update.
- * @param[in] a Index of particle to update.
- * @param[in] iter Iteration count for current run.
- */
-static void updateParticlePV(MODEL * pso, int a, unsigned int iter) {
-
-	unsigned int i;
-	float v, x;
-	float pi, pg = 0.0;
-	long double phi1, phi2;
-	float c1, c2;
-	float maxIW, minIW;
-#ifdef _OPENMP
-	unsigned int tid = omp_get_thread_num();
-#else
-	unsigned int tid = 0;
-#endif
-
-	c1 = c;
-	c2 = c;
-	maxIW = 0.9;
-	minIW = 0.4;
-
-
-	// TVIW-PSO
-	if (iWeightStrategy == 1) {
-		omega = minIW + (maxIW - minIW) *
-			(((float) max_t - (float) iter) / (float) max_t);
-	}
-
-	//TVAC-PSO
-	if (cStrategy == 1) {
-		c1 = (0.5 - 2.5) * ((float) iter / (float) max_t) + 2.5;
-		c2 = (2.5 - 0.5) * ((float) iter / (float) max_t) + 0.5;
-	}
-
-	// Cycle through variables
-	for (i = 0; i < numberVariables; ++i) {
-
-		// Use local best or global best?
-		if (gbest == 0)
-			// Local best
-			pg = pso->particle[a].informants_best_position_so_far[i];
-		if (gbest == 1)
-			// Global best
-			pg = pso->best_position_so_far[i];
-
-		pi = pso->particle[a].best_position_so_far[i];
-		v = pso->particle[a].velocity[i];
-		x = pso->particle[a].position[i];
-		phi1 = rds_luniform(&prng_states[tid], 0.0, c1);
-		phi2 = rds_luniform(&prng_states[tid], 0.0, c2);
-
-		// Determine updated Velocity
-		v = omega * v + (float) phi1 * (pi - x) + (float) phi2 * (pg - x);
-		if (v > Vmax) v = Vmax;
-		if (v < -Vmax) v = -Vmax;
-
-		// Determine updated Position
-		x = x + v;
-		if (x > Xmax) {
-			x = Xmax;
-			v = 0;
-		}
-		if (x < -Xmax) {
-			x = -Xmax;
-			v = 0;
-		}
-
-		// Update Position and Velocity for current variable
-		pso->particle[a].position[i] = x;
-		pso->particle[a].velocity[i] = v;
-
-	} // Cycle variables
-
-	// Determine particle fitness for new position
-	pso->particle[a].fitness =
-		evaluate(pso->particle[a].position, numberVariables);
-
-}
-
-/**
- * Update position and velocity of all or some of the particles.
- *
- * @param[in] iter Iteration count for current run.
- * @param[in,out] pso PSO model containing particles to move.
- */
-static void updateParticles(unsigned int iter, MODEL * pso) {
-
-	unsigned int evals = 0;
-
-	// Cycle through particles
-#ifdef _OPENMP
-	#pragma omp parallel for reduction(+:evals)
-#endif
-	for (unsigned int a = 0; a < popSize; ++a) {
-		// By default particle update is set to 0 (only relevant to SS-PSO)
-		int update = 0;
-
-		// Cycle through neighbors
-		for (unsigned int n = 0; n < neighbors->num_neighs; ++n) {
-
-			int i, j, ii, jj;
-			int neighParticle;
-
-			i = pso->particle[a].x + neighbors->neighs[n].dx;
-			j = pso->particle[a].y + neighbors->neighs[n].dy;
-
-			// Adjust neighbors location according to toroidal topology
-			ii = i;
-			jj = j;
-			if (i < 0)
-				ii = max_x - 1;
-			if (i >= (int) max_x)
-				ii = 0;
-			if (j < 0)
-				jj = max_y - 1;
-			if (j >= (int) max_y)
-				jj = 0;
-
-			// Get neighbor particle
-			neighParticle = pso->cell[ii][jj].particle;
-
-			// If a neighbor particle is the worst particle...
-			if (neighParticle == pso->worst_id)
-				// ...mark current particle for updating (SS-PSO only)
-				update = 1;
-
-			// Does the neighbor know of better fitness than current
-			// particle?
-			if (pso->particle[neighParticle].best_fitness_so_far <
-					pso->particle[a].informants_best_fitness_so_far) {
-
-				// If so, current particle will get that knowledge also
-				pso->particle[a].informants_best_fitness_so_far =
-					pso->particle[neighParticle].best_fitness_so_far;
-
-				memmove(
-					pso->particle[a].informants_best_position_so_far,
-					pso->particle[neighParticle].best_position_so_far,
-					numberVariables * sizeof(double));
-			}
-
-		} // Cycle neighbors
-
-		// Update current particle?
-		if (
-			// Regular PSO update strategy: always update
-			(algorithm == 1)
-			// SS-PSO update strategy: only worst and its neighbors are updated
-			|| ((algorithm == 2) && (update == 1)))
-		{
-			// Update current particle
-			updateParticlePV(pso, a, iter);
-			// Increment thread-local number of evaluations
-			evals++;
-		}
-
-	 } // End parallel for - cycle particles
-
-	 // Increment global number of evaluations
-	 pso->evaluations += evals;
 
 }
 
@@ -635,12 +227,14 @@ static void updateParticles(unsigned int iter, MODEL * pso) {
  */
 int main(int argc, char* argv[]) {
 
+	PARAMETERS params;
+
 	// Parse command-line arguments and read PSO parameter file.
-	parse_params(argc, argv);
+	parse_params(argc, argv, &params);
 
 	FILE * out;
 	unsigned int i;
-	MODEL * pso;
+	PSO * pso;
 
 	// Iteration count for current run
 	unsigned int iter;
@@ -662,14 +256,6 @@ int main(int argc, char* argv[]) {
 	printf("PRNG seed          : %d\n", prng_seed);
 	printf("\n");
 
-	// Initialize PRNG states
-	prng_states = (mt_state *) malloc(num_threads * sizeof(mt_state));
-	for (i = 0; i < num_threads; ++i)
-		mts_seed32new(&prng_states[i], prng_seed + i);
-
-	// Set function/problem to optimize
-	evaluate = getSelFunc(problem);
-
 	// Initialize averageBestSoFar array, set contents to zero
 	memset(averageBestSoFar, 0, max_evaluations / 100 * sizeof(long double));
 
@@ -678,11 +264,8 @@ int main(int argc, char* argv[]) {
 	// Perform PSO runs
 	for (i = 0; i < n_runs; ++i) {
 
-		// Create PSO model for current run, set contents to zero
-		pso = (MODEL *) calloc(1, sizeof(MODEL));
-
 		// Initialize PSO for current run
-		initialize(pso);
+		pso = pso_new(params , getSelFunc(problem), prng_seed);
 
 		// Aux. variables for current run
 		flag = 0;
@@ -713,12 +296,12 @@ int main(int argc, char* argv[]) {
 			// Is the best so far below the stop criteria? If so did we already
 			// saved the number of evaluations required to get below the
 			// stop criteria?
-			if ((pso->best_so_far < crit) && (flag == 0)) {
+			if ((pso->best_so_far < pso->params.crit) && (flag == 0)) {
 				crit_evals[i] = pso->evaluations;
 				flag = 1;
 				successes++;
 				// Stop current run if I'm not supposed to keep going
-				if (!crit_keep_going) break;
+				if (!pso->params.crit_keep_going) break;
 			}
 
 		} while (pso->evaluations < max_evaluations);
@@ -739,7 +322,7 @@ int main(int argc, char* argv[]) {
 		best_so_far[i] = (double) pso->best_so_far;
 
 		// Release PSO model for current run
-		free(pso);
+		pso_destroy(pso);
 	}
 
 	// Save file containing the average (between runs) best so far fitness
@@ -785,9 +368,6 @@ int main(int argc, char* argv[]) {
 	// Number and percentage of successes
 	printf("\nSuccess = %u/%u (%2.2f%%)\n\n", successes, n_runs,
 		100.0 * (float) successes / (float) n_runs);
-
-	// Release PRNG states
-	free(prng_states);
 
 	// End program successfully
 	return EXIT_SUCCESS;
