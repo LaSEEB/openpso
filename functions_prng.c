@@ -53,17 +53,19 @@ static double MRG32k3a(
 	return ((p1 - p2) * norm);
 }
 
+typedef union {
+	uint64_t s64;
+	struct {
+		uint32_t low;
+		uint32_t high;
+	} s32;
+	double sd;
+} flex;
+
 double runif01(double * vars, unsigned int nvars) {
 
 	// Union variable used to mix seeds
-	union {
-		uint64_t s64;
-		struct {
-			uint32_t low;
-			uint32_t high;
-		} s32;
-		double sd;
-	} seed;
+	flex seed, pseed;
 
 	// Maximum cycles for mixing seeds
 	unsigned int maxfor = (nvars > 6) ? nvars : 6;
@@ -74,14 +76,14 @@ double runif01(double * vars, unsigned int nvars) {
 		(uintptr_t) &maxfor};
 
 	// Seeds vector for MRG32k3a PRNG
-	double seeds[6] = {1.0, 3.0, 1.0, 6.0, 4.0, 2.0};
+	double seeds[6] = {masks[5], masks[3], masks[0], masks[3], masks[2], masks[1]};
 
 	// Seed mixing
 	for (unsigned int i = 0; i < maxfor; ++i) {
 
 		// Initialize union variable with values from the given variables,
 		// the iteration count and previous value in seeds vector
-		seed.sd = vars[i % nvars] * (i + 1) + seeds[i % 6];
+		seed.sd = vars[i % nvars] + i + seeds[(i + 1) % 6];
 
 		// Add entropy from current time and memory addresses
 		seed.s64 ^= ((uint64_t) time(NULL)) ^ ((uint64_t) masks[i % 6]);
@@ -108,7 +110,19 @@ double runif01(double * vars, unsigned int nvars) {
 
 		// Mix low and high bits, convert to double and add to current seed
 		// vector value
-		seeds[i % 6] += (double) (seed.s32.low ^ seed.s32.high);
+		pseed.sd = seeds[i % 6];
+		pseed.s32.low ^= seed.s32.high;
+		pseed.s32.high ^= seed.s32.low;
+
+		seeds[i % 6] += (double) pseed.s64;
+	}
+
+	for (unsigned int i = 0; i < 6; ++i) {
+		uint32_t lseed;
+		pseed.sd = (seeds[(i + 2) % 6] + seeds[(i + 3) % 6]) / 2;
+		lseed = pseed.s32.high ^ pseed.s32.low;
+		lseed = lseed >> (lseed >> 29);
+		seeds[i] = (double) lseed;
 	}
 
 	// Return uniform value between 0 and 1 using the MRG32k3a PRNG
