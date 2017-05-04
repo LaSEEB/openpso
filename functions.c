@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
- #include <stdio.h>
- #include <ctype.h>
- #include <stdlib.h>
- #include <time.h>
- #include <math.h>
- #include "functions_data.h"
- #include "functions_prng.h"
-
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+#include "functions_data.h"
+#include "functions_prng.h"
+#include "mtwist.h"
 #include "functions.h"
 
 #ifndef M_PI
@@ -225,6 +225,6 @@ double RotatedGriewank(double * vars, unsigned int nvars) {
 }
 
 // Basic function used to test the internal noise-generating PRNG
-double RandomTest(double * vars, unsigned int nvars) {
+double Random01(double * vars, unsigned int nvars) {
 	return runif01(vars, nvars);
 }

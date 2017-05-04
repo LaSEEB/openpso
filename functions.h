@@ -15,6 +15,6 @@ double Weierstrass(double * vars, unsigned int nvars);
 double Ackley(double * vars, unsigned int nvars);
 double ShiftedQuadricWithNoise(double * vars, unsigned int nvars);
 double RotatedGriewank(double * vars, unsigned int nvars);
-double RandomTest(double * vars, unsigned int nvars);
+double Random01(double * vars, unsigned int nvars);
 
 #endif
