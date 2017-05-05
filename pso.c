@@ -11,6 +11,9 @@
 
 #include "pso.h"
 #include "randistrs.h"
+#include "zf_log.h"
+
+const char * pso_error = NULL;
 
 // Known neighborhoods
 
@@ -30,76 +33,85 @@ static const NEIGHBORHOOD neighbors_ring = {
 	.num_neighs = 3,
 	.neighs = (NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
 
-static const char * pso_validate_params(PSO * pso) {
+static uint32_t pso_mixseed(uint32_t seed, uint32_t tid) {
 
-		if (pso->params.max_x < 1)
+	// Hash seed
+	seed  = (seed + 0x7ed55d16) + (seed << 12);
+	seed  = (seed + 0x165667b1) + (seed << 5);
+	seed  = (seed ^ 0xc761c23c) ^ (seed >> 19);
+	seed  = (seed + 0xd3a2646c) ^ (seed << 9);
+	seed  = (seed + 0xfd7046c5) + (seed << 3);
+	seed  = (seed ^ 0xb55a4f09) ^ (seed >> 16);
+
+	// Hash thread ID
+	tid = (tid ^ 61) ^ (tid >> 16);
+	tid = tid + (tid << 3);
+	tid = tid ^ (tid >> 4);
+	tid = tid * 0x27d4eb2d;
+	tid = tid ^ (tid >> 15);
+
+	// Return mixed seed
+	return seed ^ tid;
+}
+
+static const char * pso_validate_params(PARAMETERS params) {
+
+		if (params.max_x < 1)
 			return "Invalid input parameter: max_x";
 
-		if (pso->params.max_y < 1)
+		if (params.max_y < 1)
 			return "Invalid input parameter: max_y";
 
-		if (pso->params.max_t < 1)
+		if (params.max_t < 1)
 			return "Invalid input parameter: max_t";
 
-		if ((pso->params.algorithm < 1) || (pso->params.algorithm > 2))
+		if ((params.algorithm < 1) || (params.algorithm > 2))
 			return "Invalid input parameter: algorithm";
 
-		if ((pso->params.gbest < 0) || (pso->params.gbest > 1))
+		if ((params.gbest < 0) || (params.gbest > 1))
 			return "Invalid input parameter: gbest";
 
-		if (pso->params.neighborhood == 0) { // Moore
-			pso->neighbors = &neighbors_moore;
-		} else if (pso->params.neighborhood == 1) { // VN
-			pso->neighbors = &neighbors_vn;
-		} else if (pso->params.neighborhood == 2) { // Ring (requires max_y == 1)
-			pso->neighbors = &neighbors_ring;
-			if (pso->params.max_y != 1) {
-				pso->params.max_x = pso->params.max_x * pso->params.max_y;
-				pso->params.max_y = 1;
-				fprintf(stderr, "WARNING: 1D neighborhood selected, setting "
-					"max_x==%u and max_y==%u\n", pso->params.max_x, pso->params.max_y);
-			}
-		} else {
+		if (params.neighborhood > 2) { // Moore
 			return "Invalid input parameter: neighborhood";
 		}
 
-		if (pso->params.Xmax < -DBL_MAX + 0.1) //FIXME
+		if (params.Xmax < -DBL_MAX + 0.1) //FIXME
 			return "Invalid input parameter: Xmax";
 
-		if (pso->params.Vmax < -DBL_MAX + 0.1) //FIXME
+		if (params.Vmax < -DBL_MAX + 0.1) //FIXME
 			return "Invalid input parameter: Vmax";
 
-		if (pso->params.chi < -DBL_MAX + 0.1) //FIXME
+		if (params.chi < -DBL_MAX + 0.1) //FIXME
 			return "Invalid input parameter: chi";
 
-		if (pso->params.omega < -DBL_MAX + 0.1) //FIXME
+		if (params.omega < -DBL_MAX + 0.1) //FIXME
 			return "Invalid input parameter: omega";
 
-		if (pso->params.c < -DBL_MAX + 0.1) //FIXME
+		if (params.c < -DBL_MAX + 0.1) //FIXME
 			return "Invalid input parameter: c";
 
-		if (pso->params.nvars < 1)
+		if (params.nvars < 1)
 			return "Invalid input parameter: numberVariables";
 
-		if (pso->params.iWeightStrategy == 2) //FIXME
+		if (params.iWeightStrategy == 2) //FIXME
 			return "Invalid input parameter: iWeightStrategy";
 
-		if (pso->params.cStrategy == 2) //FIXME
+		if (params.cStrategy == 2) //FIXME
 			return "Invalid input parameter: cStrategy";
 
-		if (pso->params.assyInitialization == -1) //FIXME
+		if (params.assyInitialization == -1) //FIXME
 			return "Invalid input parameter: assyInitialization";
 
-		if (pso->params.initialXmin < -DBL_MAX + 0.1) //FIXME
+		if (params.initialXmin < -DBL_MAX + 0.1) //FIXME
 			return "Invalid input parameter: initialXmin";
 
-		if (pso->params.initialXmax < -DBL_MAX + 0.1) //FIXME
+		if (params.initialXmax < -DBL_MAX + 0.1) //FIXME
 			return "Invalid input parameter: initialXmax";
 
-		if (pso->params.crit < -DBL_MAX + 0.1) //FIXME and am I needed here?
+		if (params.crit < -DBL_MAX + 0.1) //FIXME and am I needed here?
 			return "Invalid input parameter: crit";
 
-		if (pso->params.crit_keep_going == -1) //FIXME and am I needed here?
+		if (params.crit_keep_going == -1) //FIXME and am I needed here?
 			return "Invalid input parameter: crit_keep_going";
 
 		return NULL;
@@ -119,12 +131,30 @@ PSO * pso_new(PARAMETERS params, pso_func func, unsigned int seed) {
 	// Allocate memory for PSO
 	pso = (PSO *) calloc(1, sizeof(PSO));
 
+	// Validate parameters
+	const char * error = pso_validate_params(params);
+	if (error) {
+		pso_error = error;
+		ZF_LOGE("%s", error);
+		return NULL;
+	}
+
 	// Keep the parameters and validate them
 	memmove(&pso->params, &params, sizeof(PARAMETERS));
-	const char * error = pso_validate_params(pso);
-	if (error) {
-		fprintf(stderr, "%s", error);
-		exit(EXIT_FAILURE);
+
+	// Setup neighbor mask
+	if (pso->params.neighborhood == 0) { // Moore
+		pso->neighbors = &neighbors_moore;
+	} else if (pso->params.neighborhood == 1) { // VN
+		pso->neighbors = &neighbors_vn;
+	} else if (pso->params.neighborhood == 2) { // Ring (requires max_y == 1)
+		pso->neighbors = &neighbors_ring;
+		if (params.max_y != 1) {
+			params.max_x = params.max_x * params.max_y;
+			params.max_y = 1;
+			ZF_LOGW("1D neighborhood selected, setting "
+				"max_x==%u and max_y==%u\n", params.max_x, params.max_y);
+		}
 	}
 
 	// Determine the number of threads
@@ -137,7 +167,7 @@ PSO * pso_new(PARAMETERS params, pso_func func, unsigned int seed) {
 	// Initialize PRNG states
 	pso->prng_states = (mt_state *) malloc(pso->num_threads * sizeof(mt_state));
 	for (i = 0; i < pso->num_threads; ++i) {
-		mts_seed32new(&pso->prng_states[i], seed + i);
+		mts_seed32new(&pso->prng_states[i], pso_mixseed(seed, i));
 	}
 
 	// Keep population size

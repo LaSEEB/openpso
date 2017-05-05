@@ -12,6 +12,7 @@
 #define MAX_Y			100
 #define MAX_VARIABLES   100
 
+extern const char * pso_error;
 
 typedef double (* pso_func)(double * vars, unsigned int nvars);
 

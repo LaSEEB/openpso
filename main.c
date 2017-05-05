@@ -43,7 +43,7 @@
  */
 #define ERROR_EXIT(err_msg, ...) \
 	do { \
-		fprintf(stderr, err_msg, ##__VA_ARGS__); \
+		fprintf(stderr, err_msg "\n", ##__VA_ARGS__); \
 		exit(EXIT_FAILURE); \
 	} while (0)
 
@@ -261,7 +261,8 @@ int main(int argc, char* argv[]) {
 	for (i = 0; i < n_runs; ++i) {
 
 		// Initialize PSO for current run
-		pso = pso_new(params , getSelFunc(problem), prng_seed + 1000 * i);
+		pso = pso_new(params , getSelFunc(problem), prng_seed + i);
+		if (!pso) ERROR_EXIT("%s", pso_error);
 
 		// Aux. variables for current run
 		flag = 0;

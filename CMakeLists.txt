@@ -18,14 +18,14 @@ add_definitions("-DMT_GENERATE_CODE_IN_HEADER=0")
 # Additional include directories
 add_subdirectory(libs)
 
-include_directories(libs/mtwist libs/iniparser)
+include_directories(libs/mtwist libs/iniparser libs/zf-log)
 
 # Create functions library
 add_library(benchfuncs SHARED functions.c functions_prng.c)
 
 # Create PSO library
 add_library(pso SHARED pso.c)
-target_link_libraries(pso m mtwist)
+target_link_libraries(pso m mtwist zf_log)
 
 # Create executable
 add_executable(${PROJECT_NAME} main.c)
