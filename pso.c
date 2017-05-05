@@ -198,7 +198,7 @@ PSO * pso_new(PSO_PARAMS params, pso_func func, unsigned int seed) {
 	}
 
 	pso->cell =
-		(unsigned int **) malloc(pso->params.max_x * sizeof(unsigned int));
+		(unsigned int **) malloc(pso->params.max_x * sizeof(unsigned int *));
 
 	z = 0;
 	for (i = 0; i < pso->params.max_x; ++i){
