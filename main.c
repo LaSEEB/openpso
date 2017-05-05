@@ -60,7 +60,7 @@
 		else res = vec[n / 2]; \
 	} while (0)
 
-static pso_func getSelFunc(unsigned int func) {
+static pso_func_opt getSelFunc(unsigned int func) {
 	switch (func) {
 		case 1: return &Sphere;
 		case 2: return &Quadric;
@@ -78,12 +78,14 @@ static pso_func getSelFunc(unsigned int func) {
 
 // *************** Global Variables *****************
 
-
-
 /// Seed for pseudo-random number generator.
 static unsigned int prng_seed;
 /// File containing PSO parameters.
 static char input_file[MAX_FILENAME_LEN];
+/// Average best so for between runs
+static double * averageBestSoFar;
+/// Average best so far counter
+static int avsf_counter;
 
 /// Number of threads.
 static unsigned int num_threads;
@@ -114,6 +116,17 @@ static char * uint2str(unsigned int evals) {
 	static char str[MAXUISLEN]; // Not thread-safe
 	snprintf(str, MAXUISLEN * sizeof(char), "%u", evals);
 	return str;
+}
+
+// End-of-iteration hook
+void avg_best_so_far(PSO * pso) {
+
+	// Is it time to update the average (between runs) best so far?
+	if (pso->evaluations % 100 == 0) {
+		averageBestSoFar[avsf_counter] +=
+			pso->best_so_far / (double) n_runs;
+		avsf_counter++;
+	}
 }
 
 /**
@@ -166,9 +179,7 @@ static void parse_params(int argc, char * argv[], PSO_PARAMS * params) {
 
 	params->max_t = (unsigned int) iniparser_getint(ini, "pso:max_t", 0);
 
-	max_evaluations = (unsigned int) iniparser_getint(ini, "pso:max_evaluations", 0);
-	if (max_evaluations < 1)
-		ERROR_EXIT("Invalid input parameter: %s", "max_evaluations");
+	params->max_evaluations = (unsigned int) iniparser_getint(ini, "pso:max_evaluations", 0);
 
 	params->algorithm = (unsigned int) iniparser_getint(ini, "pso:algorithm", 0);
 
@@ -232,18 +243,13 @@ int main(int argc, char* argv[]) {
 	unsigned int i;
 	PSO * pso;
 
-	// Iteration count for current run
-	unsigned int iter;
-
 	// Medians for fitness and evaluations
 	float fitmedian, evalsmedian;
 
 	unsigned int counter = 0;
-	long double averageBestSoFar[max_evaluations / 100];
 	unsigned int crit_evals[n_runs];
 	unsigned int successes = 0;
 	double best_so_far[n_runs];
-	int flag;
 
 	// Show parameter information to user
 	printf("\nPARAMS\n------\n");
@@ -253,59 +259,32 @@ int main(int argc, char* argv[]) {
 	printf("\n");
 
 	// Initialize averageBestSoFar array, set contents to zero
-	memset(averageBestSoFar, 0, max_evaluations / 100 * sizeof(long double));
+	averageBestSoFar = (double *) calloc(max_evaluations / 100, sizeof(double));
 
 	printf("\nRUNS\n----\n");
 
 	// Perform PSO runs
 	for (i = 0; i < n_runs; ++i) {
 
+		// Reset average best so far counter
+		avsf_counter = 0;
+
 		// Initialize PSO for current run
 		pso = pso_new(params , getSelFunc(problem), prng_seed + i);
 		if (!pso) ERROR_EXIT("%s", pso_error);
 
-		// Aux. variables for current run
-		flag = 0;
-		iter = 0;
-		counter = 0;
+		// Add end-of-iteration hooks
+		pso_hook_add(pso, avg_best_so_far);
 
 		// PSO main cycle for current run
-		// Keep cycle going until maximum number of evaluations is reached
-		do {
-
-			// Update iteration count for current run
-			iter += 1;
-
-			// Let particles know about best and worst fitness and determine
-			// average fitness
-			pso_update_pop_data(pso);
-
-			// Update all particles
-			pso_update_particles(iter, pso);
-
-			// Is it time to update the average (between runs) best so far?
-			if (pso->evaluations > counter * 100) {
-				averageBestSoFar[counter] +=
-					pso->best_so_far / (long double) n_runs;
-				counter += 1;
-			}
-
-			// Is the best so far below the stop criteria? If so did we already
-			// saved the number of evaluations required to get below the
-			// stop criteria?
-			if ((pso->best_so_far < pso->params.crit) && (flag == 0)) {
-				crit_evals[i] = pso->evaluations;
-				flag = 1;
-				successes++;
-				// Stop current run if I'm not supposed to keep going
-				if (!pso->params.crit_keep_going) break;
-			}
-
-		} while (pso->evaluations < max_evaluations);
+		pso_run(pso);
 
 		// If the number of evaluations was not enough to get below the stop
 		// criteria, set it to the maximum number of performed evaluations
-		if (flag == 0) {
+		if (pso->crit_evals) {
+			crit_evals[i] = pso->crit_evals;
+			successes++;
+		} else {
 			crit_evals[i] = UINT_MAX;
 		}
 
@@ -313,7 +292,7 @@ int main(int argc, char* argv[]) {
 		printf("Run %4u | BestFit = %10.5g | AvgFit = %10.5g | "
 			"Evals = %10s\n", i, (double) pso->best_so_far,
 			(double) pso->average_fitness,
-			flag ? uint2str(crit_evals[i]) : "--");
+			pso->crit_evals ? uint2str(crit_evals[i]) : "--");
 
 		// Keep best so far for current run
 		best_so_far[i] = (double) pso->best_so_far;
@@ -328,6 +307,7 @@ int main(int argc, char* argv[]) {
 	for (i = 0; i < counter; ++i)
 		fprintf(out, "%.40g\n", (double) averageBestSoFar[i]);
 	fclose(out);
+	free(averageBestSoFar);
 
 	// Save number of evaluations required for getting below stop criterion
 	out = fopen("AES.DAT", "w");

@@ -8,6 +8,7 @@
 #include <string.h>
 #include <float.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "pso.h"
 #include "randistrs.h"
@@ -65,6 +66,9 @@ static const char * pso_validate_params(PSO_PARAMS params) {
 
 		if (params.max_t < 1)
 			return "Invalid input parameter: max_t";
+
+		if (params.max_evaluations < 1)
+			return "Invalid input parameter: max_evaluations";
 
 		if ((params.algorithm < 1) || (params.algorithm > 2))
 			return "Invalid input parameter: algorithm";
@@ -210,7 +214,7 @@ static void pso_update_particle_pv(PSO * pso, int a, unsigned int iter) {
  *
  * @param[in,out] PSO model to initialize.
  */
-PSO * pso_new(PSO_PARAMS params, pso_func func, unsigned int seed) {
+PSO * pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 
 	PSO * pso;
 	unsigned int z;
@@ -226,6 +230,11 @@ PSO * pso_new(PSO_PARAMS params, pso_func func, unsigned int seed) {
 		ZF_LOGE("%s", error);
 		return NULL;
 	}
+
+	// No hooks initially
+	pso->n_hooks = 0;
+	pso->alloc_hooks = 0;
+	pso->hooks = NULL;
 
 	// Keep the parameters and validate them
 	memmove(&pso->params, &params, sizeof(PSO_PARAMS));
@@ -398,6 +407,9 @@ void pso_destroy(PSO * pso) {
 	free(pso->best_position);
 	free(pso->best_position_so_far);
 
+	// Release hooks
+	free(pso->hooks);
+
 	// Release PSO model
 	free(pso);
 }
@@ -550,5 +562,66 @@ void pso_update_particles(unsigned int iter, PSO * pso) {
 
 	 // Increment global number of evaluations
 	 pso->evaluations += evals;
+
+}
+
+/// PSO algorithm
+void pso_run(PSO * pso) {
+
+	// Aux. variables for current run
+	pso->iterations = 0;
+	pso->evaluations = 0;
+	pso->crit_evals = 0;
+
+	// Keep cycle going until maximum number of evaluations is reached
+	do {
+
+		// Update iteration count for current run
+		pso->iterations++;
+
+		// Let particles know about best and worst fitness and determine
+		// average fitness
+		pso_update_pop_data(pso);
+
+		// Update all particles
+		pso_update_particles(pso->iterations, pso);
+
+		// Is the best so far below the stop criteria? If so did we already
+		// saved the number of evaluations required to get below the
+		// stop criteria?
+		if ((pso->best_so_far < pso->params.crit) && (pso->crit_evals == 0)) {
+
+			// Keep the number of evaluations which attained the stop criteria
+			pso->crit_evals = pso->evaluations;
+
+			// Stop current run if I'm not supposed to keep going
+			if (!pso->params.crit_keep_going) break;
+
+		}
+
+		// Call end-of-iteration hook functions
+		for (unsigned int i = 0; i < pso->n_hooks; ++i) {
+			pso->hooks[i](pso);
+		}
+
+	} while (pso->evaluations < pso->params.max_evaluations);
+
+}
+
+#define HOOKS_INC 2
+
+void pso_hook_add(PSO * pso, pso_func_hook func) {
+
+	if (pso->n_hooks < pso->alloc_hooks) {
+
+		pso->hooks[pso->n_hooks] = func;
+		pso->n_hooks++;
+
+	} else {
+
+		pso->hooks = (pso_func_hook *) realloc(pso->hooks,
+			(pso->alloc_hooks + HOOKS_INC) * sizeof(pso_func_hook));
+
+	}
 
 }
