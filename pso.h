@@ -7,10 +7,6 @@
 
 #include "mtwist.h"
 
-#define MAX_POP_SIZE	8100
-#define MAX_X			100
-#define MAX_Y			100
-
 /// If PSO terminates with error, error message will be placed here
 extern const char * pso_error;
 
@@ -114,13 +110,10 @@ PSO * pso_new(PSO_PARAMS params, pso_func func, unsigned int seed);
 void pso_destroy(PSO * pso);
 
 // Update population data.
-void updatePopulationData(PSO * pso);
-
-// Update position and velocity of a particle.
-void updateParticlePV(PSO * pso, int a, unsigned int iter);
+void pso_update_pop_data(PSO * pso);
 
 // Update position and velocity of all or some of the particles.
-void updateParticles(unsigned int iter, PSO * pso);
+void pso_update_particles(unsigned int iter, PSO * pso);
 
 
 #endif

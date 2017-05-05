@@ -162,13 +162,13 @@ static void parse_params(int argc, char * argv[], PSO_PARAMS * params) {
 
 	n_runs = (unsigned int) iniparser_getint(ini, "pso:n_runs", 0);
 	if (n_runs < 1)
-		ERROR_EXIT("Invalid input parameter: n_runs");
+		ERROR_EXIT("Invalid input parameter: %s", "n_runs");
 
 	params->max_t = (unsigned int) iniparser_getint(ini, "pso:max_t", 0);
 
 	max_evaluations = (unsigned int) iniparser_getint(ini, "pso:max_evaluations", 0);
 	if (max_evaluations < 1)
-		ERROR_EXIT("Invalid input parameter: max_evaluations");
+		ERROR_EXIT("Invalid input parameter: %s", "max_evaluations");
 
 	params->algorithm = (unsigned int) iniparser_getint(ini, "pso:algorithm", 0);
 
@@ -179,7 +179,7 @@ static void parse_params(int argc, char * argv[], PSO_PARAMS * params) {
 
 	problem = (unsigned int) iniparser_getint(ini, "pso:problem", 0);
 	if ((problem < 1) || (problem > 10))
-		ERROR_EXIT("Invalid input parameter: problem");
+		ERROR_EXIT("Invalid input parameter: %s", "problem");
 
 	params->Xmax = iniparser_getdouble(ini, "pso:xmax", -DBL_MAX);
 
@@ -278,10 +278,10 @@ int main(int argc, char* argv[]) {
 
 			// Let particles know about best and worst fitness and determine
 			// average fitness
-			updatePopulationData(pso);
+			pso_update_pop_data(pso);
 
 			// Update all particles
-			updateParticles(iter, pso);
+			pso_update_particles(iter, pso);
 
 			// Is it time to update the average (between runs) best so far?
 			if (pso->evaluations > counter * 100) {

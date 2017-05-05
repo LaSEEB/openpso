@@ -118,6 +118,93 @@ static const char * pso_validate_params(PSO_PARAMS params) {
 		return NULL;
 }
 
+
+/**
+ * Update position and velocity of a particle.
+ *
+ * @param[in,out] PSO model containing particles to update.
+ * @param[in] a Index of particle to update.
+ * @param[in] iter Iteration count for current run.
+ */
+static void pso_update_particle_pv(PSO * pso, int a, unsigned int iter) {
+
+	float v, x;
+	float pi, pg = 0.0;
+	long double phi1, phi2;
+	float c1, c2;
+	float maxIW, minIW;
+	double omega;
+#ifdef _OPENMP
+	unsigned int tid = omp_get_thread_num();
+#else
+	unsigned int tid = 0;
+#endif
+
+	c1 = pso->params.c;
+	c2 = pso->params.c;
+	maxIW = 0.9;
+	minIW = 0.4;
+
+	// TVIW-PSO
+	if (pso->params.iWeightStrategy == 1) {
+		omega = minIW + (maxIW - minIW) *
+			(((float) pso->params.max_t -
+			(float) iter) / (float) pso->params.max_t);
+	} else {
+		omega = pso->params.omega;
+	}
+
+	//TVAC-PSO
+	if (pso->params.cStrategy == 1) {
+		c1 = (0.5 - 2.5) * ((float) iter / (float) pso->params.max_t) + 2.5;
+		c2 = (2.5 - 0.5) * ((float) iter / (float) pso->params.max_t) + 0.5;
+	}
+
+	// Cycle through variables
+	for (unsigned int i = 0; i < pso->params.nvars; ++i) {
+
+		// Use local best or global best?
+		if (pso->params.gbest == 0)
+			// Local best
+			pg = pso->particles[a].informants_best_position_so_far[i];
+		if (pso->params.gbest == 1)
+			// Global best
+			pg = pso->best_position_so_far[i];
+
+		pi = pso->particles[a].best_position_so_far[i];
+		v = pso->particles[a].velocity[i];
+		x = pso->particles[a].position[i];
+		phi1 = rds_luniform(&pso->prng_states[tid], 0.0, c1);
+		phi2 = rds_luniform(&pso->prng_states[tid], 0.0, c2);
+
+		// Determine updated Velocity
+		v = omega * v + (float) phi1 * (pi - x) + (float) phi2 * (pg - x);
+		if (v > pso->params.Vmax) v = pso->params.Vmax;
+		if (v < -pso->params.Vmax) v = -pso->params.Vmax;
+
+		// Determine updated Position
+		x = x + v;
+		if (x > pso->params.Xmax) {
+			x = pso->params.Xmax;
+			v = 0;
+		}
+		if (x < -pso->params.Xmax) {
+			x = -pso->params.Xmax;
+			v = 0;
+		}
+
+		// Update Position and Velocity for current variable
+		pso->particles[a].position[i] = x;
+		pso->particles[a].velocity[i] = v;
+
+	} // Cycle variables
+
+	// Determine particle fitness for new position
+	pso->particles[a].fitness =
+		pso->evaluate(pso->particles[a].position, pso->params.nvars);
+
+}
+
 /**
  * Initialize PSO model.
  *
@@ -126,7 +213,7 @@ static const char * pso_validate_params(PSO_PARAMS params) {
 PSO * pso_new(PSO_PARAMS params, pso_func func, unsigned int seed) {
 
 	PSO * pso;
-	unsigned int i, j, z;
+	unsigned int z;
 	float xmin, xmax;
 
 	// Allocate memory for PSO
@@ -166,8 +253,8 @@ PSO * pso_new(PSO_PARAMS params, pso_func func, unsigned int seed) {
 	#endif
 
 	// Initialize PRNG states
-	pso->prng_states = (mt_state *) malloc(pso->num_threads * sizeof(mt_state));
-	for (i = 0; i < pso->num_threads; ++i) {
+	pso->prng_states = (mt_state *) calloc(pso->num_threads, sizeof(mt_state));
+	for (unsigned int i = 0; i < pso->num_threads; ++i) {
 		mts_seed32new(&pso->prng_states[i], pso_mixseed(seed, i));
 	}
 
@@ -179,39 +266,42 @@ PSO * pso_new(PSO_PARAMS params, pso_func func, unsigned int seed) {
 
 	// Initialize best position vectors
 	pso->best_position =
-		(double *) malloc(pso->params.nvars * sizeof(double));
+		(double *) calloc(pso->params.nvars, sizeof(double));
 	pso->best_position_so_far =
-		(double *) malloc(pso->params.nvars * sizeof(double));
+		(double *) calloc(pso->params.nvars, sizeof(double));
 
-	// Initialize cells and particles
+	// Initialize particles vector
 	pso->particles =
-		(PSO_PARTICLE *) malloc(pso->popSize * sizeof(PSO_PARTICLE));
-	for (i = 0; i < pso->popSize; ++i) {
+		(PSO_PARTICLE *) calloc(pso->popSize, sizeof(PSO_PARTICLE));
+
+	// Initialize individual particles
+	for (unsigned int i = 0; i < pso->popSize; ++i) {
 		pso->particles[i].informants_best_position_so_far =
-			(double *) malloc(pso->params.nvars * sizeof(double));
+			(double *) calloc(pso->params.nvars, sizeof(double));
 		pso->particles[i].best_position_so_far =
-			(double *) malloc(pso->params.nvars * sizeof(double));
+			(double *) calloc(pso->params.nvars, sizeof(double));
 		pso->particles[i].position =
-			(double *) malloc(pso->params.nvars * sizeof(double));
+			(double *) calloc(pso->params.nvars, sizeof(double));
 		pso->particles[i].velocity =
-			(double *) malloc(pso->params.nvars * sizeof(double));
+			(double *) calloc(pso->params.nvars, sizeof(double));
 	}
 
+	// Initialize cells
 	pso->cell =
-		(unsigned int **) malloc(pso->params.max_x * sizeof(unsigned int *));
+		(unsigned int **) calloc(pso->params.max_x, sizeof(unsigned int *));
 
 	z = 0;
-	for (i = 0; i < pso->params.max_x; ++i){
+	for (unsigned int i = 0; i < pso->params.max_x; ++i) {
 		pso->cell[i] =
-			(unsigned int *) malloc(pso->params.max_y * sizeof(unsigned int));
-		for (j = 0; j < pso->params.max_y; ++j){
+			(unsigned int *) calloc(pso->params.max_y, sizeof(unsigned int));
+		for (unsigned int j = 0; j < pso->params.max_y; ++j) {
 			// Set cell as occupied (particle is the id)
 			pso->cell[i][j] = z;
 			// Set particle default position
 			pso->particles[z].x = i;
 			pso->particles[z].y = j;
 			// Increment id
-			z = z + 1;
+			z++;
 		}
 	}
 
@@ -227,11 +317,11 @@ PSO * pso_new(PSO_PARAMS params, pso_func func, unsigned int seed) {
 	}
 
 	//Initialize position and velocity of each particle
-	for (i = 0; i < pso->popSize; ++i) {
+	for (unsigned int i = 0; i < pso->popSize; ++i) {
 
 		// Initialize position and velocity for each variable of the current
 		// particle
-		for (j = 0;  j < pso->params.nvars; ++j) {
+		for (unsigned int j = 0;  j < pso->params.nvars; ++j) {
 
 			// Initialize position for current variable of current particle
 			pso->particles[i].position[j] =
@@ -319,10 +409,7 @@ void pso_destroy(PSO * pso) {
  *
  * @param[in,out] PSO model to update.
  */
-void updatePopulationData(PSO * pso) {
-
-	// Aux. variables
-	unsigned int i;
+void pso_update_pop_data(PSO * pso) {
 
 	// Reset best and worst fitnesses
 	pso->best_fitness = pso->particles[0].fitness;
@@ -330,7 +417,7 @@ void updatePopulationData(PSO * pso) {
 	pso->average_fitness = 0;
 
 	// Cycle through particles
-	for (i = 0; i < pso->popSize; ++i) {
+	for (unsigned int i = 0; i < pso->popSize; ++i) {
 
 		// Updates worst in population
 		if (pso->particles[i].fitness > pso->worst_fitness) {
@@ -383,99 +470,12 @@ void updatePopulationData(PSO * pso) {
 }
 
 /**
- * Update position and velocity of a particle.
- *
- * @param[in,out] PSO model containing particles to update.
- * @param[in] a Index of particle to update.
- * @param[in] iter Iteration count for current run.
- */
-void updateParticlePV(PSO * pso, int a, unsigned int iter) {
-
-	unsigned int i;
-	float v, x;
-	float pi, pg = 0.0;
-	long double phi1, phi2;
-	float c1, c2;
-	float maxIW, minIW;
-	double omega;
-#ifdef _OPENMP
-	unsigned int tid = omp_get_thread_num();
-#else
-	unsigned int tid = 0;
-#endif
-
-	c1 = pso->params.c;
-	c2 = pso->params.c;
-	maxIW = 0.9;
-	minIW = 0.4;
-
-	// TVIW-PSO
-	if (pso->params.iWeightStrategy == 1) {
-		omega = minIW + (maxIW - minIW) *
-			(((float) pso->params.max_t -
-			(float) iter) / (float) pso->params.max_t);
-	} else {
-		omega = pso->params.omega;
-	}
-
-	//TVAC-PSO
-	if (pso->params.cStrategy == 1) {
-		c1 = (0.5 - 2.5) * ((float) iter / (float) pso->params.max_t) + 2.5;
-		c2 = (2.5 - 0.5) * ((float) iter / (float) pso->params.max_t) + 0.5;
-	}
-
-	// Cycle through variables
-	for (i = 0; i < pso->params.nvars; ++i) {
-
-		// Use local best or global best?
-		if (pso->params.gbest == 0)
-			// Local best
-			pg = pso->particles[a].informants_best_position_so_far[i];
-		if (pso->params.gbest == 1)
-			// Global best
-			pg = pso->best_position_so_far[i];
-
-		pi = pso->particles[a].best_position_so_far[i];
-		v = pso->particles[a].velocity[i];
-		x = pso->particles[a].position[i];
-		phi1 = rds_luniform(&pso->prng_states[tid], 0.0, c1);
-		phi2 = rds_luniform(&pso->prng_states[tid], 0.0, c2);
-
-		// Determine updated Velocity
-		v = omega * v + (float) phi1 * (pi - x) + (float) phi2 * (pg - x);
-		if (v > pso->params.Vmax) v = pso->params.Vmax;
-		if (v < -pso->params.Vmax) v = -pso->params.Vmax;
-
-		// Determine updated Position
-		x = x + v;
-		if (x > pso->params.Xmax) {
-			x = pso->params.Xmax;
-			v = 0;
-		}
-		if (x < -pso->params.Xmax) {
-			x = -pso->params.Xmax;
-			v = 0;
-		}
-
-		// Update Position and Velocity for current variable
-		pso->particles[a].position[i] = x;
-		pso->particles[a].velocity[i] = v;
-
-	} // Cycle variables
-
-	// Determine particle fitness for new position
-	pso->particles[a].fitness =
-		pso->evaluate(pso->particles[a].position, pso->params.nvars);
-
-}
-
-/**
  * Update position and velocity of all or some of the particles.
  *
  * @param[in] iter Iteration count for current run.
  * @param[in,out] pso PSO model containing particles to move.
  */
-void updateParticles(unsigned int iter, PSO * pso) {
+void pso_update_particles(unsigned int iter, PSO * pso) {
 
 	unsigned int evals = 0;
 
@@ -541,7 +541,7 @@ void updateParticles(unsigned int iter, PSO * pso) {
 			|| ((pso->params.algorithm == 2) && (update == 1)))
 		{
 			// Update current particle
-			updateParticlePV(pso, a, iter);
+			pso_update_particle_pv(pso, a, iter);
 			// Increment thread-local number of evaluations
 			evals++;
 		}

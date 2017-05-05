@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(SSPSO)
 
 # Compiler options for GCC/Clang
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -std=c99")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -std=c99 -pedantic")
 
 find_package(OpenMP QUIET)
 
