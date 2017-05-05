@@ -12,9 +12,7 @@
 
 // System libraries
 #include <stdio.h>
-#include <ctype.h>
 #include <stdlib.h>
-#include <math.h>
 #include <float.h>
 #include <limits.h>
 #ifdef _OPENMP
@@ -22,8 +20,6 @@
 #endif
 
 // Local libraries
-#include "randistrs.h"
-#include "mtwist.h"
 #include "iniparser.h"
 
 // SSPSO headers
@@ -265,7 +261,7 @@ int main(int argc, char* argv[]) {
 	for (i = 0; i < n_runs; ++i) {
 
 		// Initialize PSO for current run
-		pso = pso_new(params , getSelFunc(problem), prng_seed);
+		pso = pso_new(params , getSelFunc(problem), prng_seed + 1000 * i);
 
 		// Aux. variables for current run
 		flag = 0;

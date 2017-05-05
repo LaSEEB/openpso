@@ -121,7 +121,11 @@ PSO * pso_new(PARAMETERS params, pso_func func, unsigned int seed) {
 
 	// Keep the parameters and validate them
 	memmove(&pso->params, &params, sizeof(PARAMETERS));
-	pso_validate_params(pso);
+	const char * error = pso_validate_params(pso);
+	if (error) {
+		fprintf(stderr, "%s", error);
+		exit(EXIT_FAILURE);
+	}
 
 	// Determine the number of threads
 	#ifdef _OPENMP
