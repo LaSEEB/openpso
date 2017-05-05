@@ -126,7 +126,7 @@ static char * uint2str(unsigned int evals) {
  * @return `EXIT_SUCCESS` if program executes successfully, `EXIT_FAILURE`
  * otherwise.
  */
-static void parse_params(int argc, char * argv[], PARAMETERS * params) {
+static void parse_params(int argc, char * argv[], PSO_PARAMS * params) {
 
 	// INI object
 	dictionary * ini;
@@ -223,7 +223,7 @@ static void parse_params(int argc, char * argv[], PARAMETERS * params) {
  */
 int main(int argc, char* argv[]) {
 
-	PARAMETERS params;
+	PSO_PARAMS params;
 
 	// Parse command-line arguments and read PSO parameter file.
 	parse_params(argc, argv, &params);

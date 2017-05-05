@@ -18,21 +18,22 @@ const char * pso_error = NULL;
 // Known neighborhoods
 
 /// Moore neighborhood
-static const NEIGHBORHOOD neighbors_moore = {
+static const PSO_NEIGHBORHOOD neighbors_moore = {
 	.num_neighs = 9,
-	.neighs = (NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 1}, {1, 0},
+	.neighs = (PSO_NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 1}, {1, 0},
 		{1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}}};
 
 /// Von Neumann neighborhood
-static const NEIGHBORHOOD neighbors_vn = {
+static const PSO_NEIGHBORHOOD neighbors_vn = {
 	.num_neighs = 5,
-	.neighs = (NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}};
+	.neighs = (PSO_NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}};
 
 /// Ring neighborhood (requires max_y == 1)
-static const NEIGHBORHOOD neighbors_ring = {
+static const PSO_NEIGHBORHOOD neighbors_ring = {
 	.num_neighs = 3,
-	.neighs = (NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
+	.neighs = (PSO_NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
 
+/// Internal function for hashing PRNG seed with thread ID
 static uint32_t pso_mixseed(uint32_t seed, uint32_t tid) {
 
 	// Hash seed
@@ -54,7 +55,7 @@ static uint32_t pso_mixseed(uint32_t seed, uint32_t tid) {
 	return seed ^ tid;
 }
 
-static const char * pso_validate_params(PARAMETERS params) {
+static const char * pso_validate_params(PSO_PARAMS params) {
 
 		if (params.max_x < 1)
 			return "Invalid input parameter: max_x";
@@ -122,7 +123,7 @@ static const char * pso_validate_params(PARAMETERS params) {
  *
  * @param[in,out] PSO model to initialize.
  */
-PSO * pso_new(PARAMETERS params, pso_func func, unsigned int seed) {
+PSO * pso_new(PSO_PARAMS params, pso_func func, unsigned int seed) {
 
 	PSO * pso;
 	unsigned int i, j, z;
@@ -140,7 +141,7 @@ PSO * pso_new(PARAMETERS params, pso_func func, unsigned int seed) {
 	}
 
 	// Keep the parameters and validate them
-	memmove(&pso->params, &params, sizeof(PARAMETERS));
+	memmove(&pso->params, &params, sizeof(PSO_PARAMS));
 
 	// Setup neighbor mask
 	if (pso->params.neighborhood == 0) { // Moore
@@ -176,15 +177,39 @@ PSO * pso_new(PARAMETERS params, pso_func func, unsigned int seed) {
 	// Keep function to evaluate
 	pso->evaluate = func;
 
+	// Initialize best position vectors
+	pso->best_position =
+		(double *) malloc(pso->params.nvars * sizeof(double));
+	pso->best_position_so_far =
+		(double *) malloc(pso->params.nvars * sizeof(double));
+
 	// Initialize cells and particles
+	pso->particles =
+		(PSO_PARTICLE *) malloc(pso->popSize * sizeof(PSO_PARTICLE));
+	for (i = 0; i < pso->popSize; ++i) {
+		pso->particles[i].informants_best_position_so_far =
+			(double *) malloc(pso->params.nvars * sizeof(double));
+		pso->particles[i].best_position_so_far =
+			(double *) malloc(pso->params.nvars * sizeof(double));
+		pso->particles[i].position =
+			(double *) malloc(pso->params.nvars * sizeof(double));
+		pso->particles[i].velocity =
+			(double *) malloc(pso->params.nvars * sizeof(double));
+	}
+
+	pso->cell =
+		(unsigned int **) malloc(pso->params.max_x * sizeof(unsigned int));
+
 	z = 0;
 	for (i = 0; i < pso->params.max_x; ++i){
+		pso->cell[i] =
+			(unsigned int *) malloc(pso->params.max_y * sizeof(unsigned int));
 		for (j = 0; j < pso->params.max_y; ++j){
 			// Set cell as occupied (particle is the id)
-			pso->cell[i][j].particle = z;
+			pso->cell[i][j] = z;
 			// Set particle default position
-			pso->particle[z].x = i;
-			pso->particle[z].y = j;
+			pso->particles[z].x = i;
+			pso->particles[z].y = j;
 			// Increment id
 			z = z + 1;
 		}
@@ -209,52 +234,79 @@ PSO * pso_new(PARAMETERS params, pso_func func, unsigned int seed) {
 		for (j = 0;  j < pso->params.nvars; ++j) {
 
 			// Initialize position for current variable of current particle
-			pso->particle[i].position[j] =
+			pso->particles[i].position[j] =
 				rds_luniform(&pso->prng_states[0], xmin, xmax);
 
 			// Initialize velocity for current variable of current particle
-			pso->particle[i].velocity[j] =
+			pso->particles[i].velocity[j] =
 				rds_luniform(
 					&pso->prng_states[0], -pso->params.Xmax, pso->params.Xmax) *
 				(0.5 - rds_luniform(&pso->prng_states[0], 0, 1.0));
 
 			// Set best position so far as current position
-			pso->particle[i].best_position_so_far[j] =
-				pso->particle[i].position[j];
+			pso->particles[i].best_position_so_far[j] =
+				pso->particles[i].position[j];
 
 			// Set best informat so far as myself
-			pso->particle[i].informants_best_position_so_far[j] =
-				pso->particle[i].position[j];
+			pso->particles[i].informants_best_position_so_far[j] =
+				pso->particles[i].position[j];
 		}
 
 		// Determine fitness for current particle
-		pso->particle[i].fitness =
-			pso->evaluate(pso->particle[i].position, pso->params.nvars);
+		pso->particles[i].fitness =
+			pso->evaluate(pso->particles[i].position, pso->params.nvars);
 
 		// Set my own fitness as best fitness so far
-		pso->particle[i].best_fitness_so_far =
-			pso->particle[i].fitness;
+		pso->particles[i].best_fitness_so_far =
+			pso->particles[i].fitness;
 
 		// Set me as the best informant so far
-		pso->particle[i].informants_best_fitness_so_far =
-			pso->particle[i].fitness;
+		pso->particles[i].informants_best_fitness_so_far =
+			pso->particles[i].fitness;
 	}
 
 	// Initialize remaining PSO variables to their defaults
-	pso->best_so_far = pso->particle[0].fitness;
+	pso->best_so_far = pso->particles[0].fitness;
 	pso->best_so_far_id = 0;
 	pso->evaluations = 0;
-	pso->minFitness = pso->particle[0].fitness;
+	pso->minFitness = pso->particles[0].fitness;
 	pso->worst_id = 0;
 
+	// Return initialized PSO model
 	return pso;
 
 }
 
+/**
+ * Release a PSO model.
+ *
+ * @param[in] PSO model to release.
+ */
 void pso_destroy(PSO * pso) {
 
 	// Release PRNG states
 	free(pso->prng_states);
+
+	// Release individual particles
+	for (unsigned int i = 0; i < pso->popSize; ++i) {
+		free(pso->particles[i].informants_best_position_so_far);
+		free(pso->particles[i].best_position_so_far);
+		free(pso->particles[i].position);
+		free(pso->particles[i].velocity);
+	}
+
+	// Release particle vector
+	free(pso->particles);
+
+	// Free cells
+	for (unsigned int i = 0; i < pso->params.max_y; ++i) {
+		free(pso->cell[i]);
+	}
+	free(pso->cell);
+
+	// Release best position vectors
+	free(pso->best_position);
+	free(pso->best_position_so_far);
 
 	// Release PSO model
 	free(pso);
@@ -273,7 +325,7 @@ void updatePopulationData(PSO * pso) {
 	unsigned int i;
 
 	// Reset best and worst fitnesses
-	pso->best_fitness = pso->particle[0].fitness;
+	pso->best_fitness = pso->particles[0].fitness;
 	pso->worst_fitness = 0;
 	pso->average_fitness = 0;
 
@@ -281,49 +333,49 @@ void updatePopulationData(PSO * pso) {
 	for (i = 0; i < pso->popSize; ++i) {
 
 		// Updates worst in population
-		if (pso->particle[i].fitness > pso->worst_fitness) {
-			pso->worst_fitness = pso->particle[i].fitness;
+		if (pso->particles[i].fitness > pso->worst_fitness) {
+			pso->worst_fitness = pso->particles[i].fitness;
 			pso->worst_id = i;
 		}
 
 		// Updates best_so_far in population
-		if (pso->particle[i].fitness < pso->best_so_far) {
-			pso->best_so_far = pso->particle[i].fitness;
+		if (pso->particles[i].fitness < pso->best_so_far) {
+			pso->best_so_far = pso->particles[i].fitness;
 			memmove(pso->best_position_so_far,
-				pso->particle[i].position,
+				pso->particles[i].position,
 				pso->params.nvars * sizeof(double));
 		}
 
 		// Updates best in current population
-		if (pso->particle[i].fitness < pso->best_fitness) {
-			pso->best_fitness = pso->particle[i].fitness;
+		if (pso->particles[i].fitness < pso->best_fitness) {
+			pso->best_fitness = pso->particles[i].fitness;
 			memmove(pso->best_position,
-				pso->particle[i].position,
+				pso->particles[i].position,
 				pso->params.nvars * sizeof(double));
 		}
 
 		// Updates particle's best position
-		if (pso->particle[i].fitness < pso->particle[i].best_fitness_so_far) {
-			pso->particle[i].best_fitness_so_far = pso->particle[i].fitness;
-			memmove(pso->particle[i].best_position_so_far,
-				pso->particle[i].position,
+		if (pso->particles[i].fitness < pso->particles[i].best_fitness_so_far) {
+			pso->particles[i].best_fitness_so_far = pso->particles[i].fitness;
+			memmove(pso->particles[i].best_position_so_far,
+				pso->particles[i].position,
 				pso->params.nvars * sizeof(double));
 
 		}
 
 		// Updates best informant
-		if (pso->particle[i].fitness <
-				pso->particle[i].informants_best_fitness_so_far) {
+		if (pso->particles[i].fitness <
+				pso->particles[i].informants_best_fitness_so_far) {
 
-			pso->particle[i].informants_best_fitness_so_far =
-				pso->particle[i].fitness;
+			pso->particles[i].informants_best_fitness_so_far =
+				pso->particles[i].fitness;
 
-			memmove(pso->particle[i].informants_best_position_so_far,
-				pso->particle[i].position,
+			memmove(pso->particles[i].informants_best_position_so_far,
+				pso->particles[i].position,
 				pso->params.nvars * sizeof(double));
 		}
 
-		pso->average_fitness = pso->average_fitness + pso->particle[i].fitness;
+		pso->average_fitness = pso->average_fitness + pso->particles[i].fitness;
 	}
 
 	// Determine average fitness in the population
@@ -357,7 +409,6 @@ void updateParticlePV(PSO * pso, int a, unsigned int iter) {
 	maxIW = 0.9;
 	minIW = 0.4;
 
-
 	// TVIW-PSO
 	if (pso->params.iWeightStrategy == 1) {
 		omega = minIW + (maxIW - minIW) *
@@ -379,14 +430,14 @@ void updateParticlePV(PSO * pso, int a, unsigned int iter) {
 		// Use local best or global best?
 		if (pso->params.gbest == 0)
 			// Local best
-			pg = pso->particle[a].informants_best_position_so_far[i];
+			pg = pso->particles[a].informants_best_position_so_far[i];
 		if (pso->params.gbest == 1)
 			// Global best
 			pg = pso->best_position_so_far[i];
 
-		pi = pso->particle[a].best_position_so_far[i];
-		v = pso->particle[a].velocity[i];
-		x = pso->particle[a].position[i];
+		pi = pso->particles[a].best_position_so_far[i];
+		v = pso->particles[a].velocity[i];
+		x = pso->particles[a].position[i];
 		phi1 = rds_luniform(&pso->prng_states[tid], 0.0, c1);
 		phi2 = rds_luniform(&pso->prng_states[tid], 0.0, c2);
 
@@ -407,14 +458,14 @@ void updateParticlePV(PSO * pso, int a, unsigned int iter) {
 		}
 
 		// Update Position and Velocity for current variable
-		pso->particle[a].position[i] = x;
-		pso->particle[a].velocity[i] = v;
+		pso->particles[a].position[i] = x;
+		pso->particles[a].velocity[i] = v;
 
 	} // Cycle variables
 
 	// Determine particle fitness for new position
-	pso->particle[a].fitness =
-		pso->evaluate(pso->particle[a].position, pso->params.nvars);
+	pso->particles[a].fitness =
+		pso->evaluate(pso->particles[a].position, pso->params.nvars);
 
 }
 
@@ -442,8 +493,8 @@ void updateParticles(unsigned int iter, PSO * pso) {
 			int i, j, ii, jj;
 			int neighParticle;
 
-			i = pso->particle[a].x + pso->neighbors->neighs[n].dx;
-			j = pso->particle[a].y + pso->neighbors->neighs[n].dy;
+			i = pso->particles[a].x + pso->neighbors->neighs[n].dx;
+			j = pso->particles[a].y + pso->neighbors->neighs[n].dy;
 
 			// Adjust neighbors location according to toroidal topology
 			ii = i;
@@ -458,7 +509,7 @@ void updateParticles(unsigned int iter, PSO * pso) {
 				jj = 0;
 
 			// Get neighbor particle
-			neighParticle = pso->cell[ii][jj].particle;
+			neighParticle = pso->cell[ii][jj];
 
 			// If a neighbor particle is the worst particle...
 			if (neighParticle == pso->worst_id)
@@ -467,16 +518,16 @@ void updateParticles(unsigned int iter, PSO * pso) {
 
 			// Does the neighbor know of better fitness than current
 			// particle?
-			if (pso->particle[neighParticle].best_fitness_so_far <
-					pso->particle[a].informants_best_fitness_so_far) {
+			if (pso->particles[neighParticle].best_fitness_so_far <
+					pso->particles[a].informants_best_fitness_so_far) {
 
 				// If so, current particle will get that knowledge also
-				pso->particle[a].informants_best_fitness_so_far =
-					pso->particle[neighParticle].best_fitness_so_far;
+				pso->particles[a].informants_best_fitness_so_far =
+					pso->particles[neighParticle].best_fitness_so_far;
 
 				memmove(
-					pso->particle[a].informants_best_position_so_far,
-					pso->particle[neighParticle].best_position_so_far,
+					pso->particles[a].informants_best_position_so_far,
+					pso->particles[neighParticle].best_position_so_far,
 					pso->params.nvars * sizeof(double));
 			}
 

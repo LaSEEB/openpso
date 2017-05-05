@@ -10,48 +10,16 @@
 #define MAX_POP_SIZE	8100
 #define MAX_X			100
 #define MAX_Y			100
-#define MAX_VARIABLES   100
 
+/// If PSO terminates with error, error message will be placed here
 extern const char * pso_error;
 
+/// Type of functions accepted by PSO
 typedef double (* pso_func)(double * vars, unsigned int nvars);
 
+// Structures
 
-typedef struct {
-	int dx;
-	int dy;
-} NEIGHBOR;
-
-typedef struct {
-	unsigned int num_neighs;
-	const NEIGHBOR * neighs;
-} NEIGHBORHOOD;
-
-/////////////////////////////////////////////////////// STRUCTURES
-typedef double PARTICLE[MAX_VARIABLES];
-
-typedef struct {
-	int x;
-	int y;
-	long double fitness;
-	long double best_fitness_so_far;
-	long double informants_best_fitness_so_far;
-	PARTICLE informants_best_position_so_far;
-	PARTICLE best_position_so_far;
-	PARTICLE position;
-	PARTICLE velocity;
-} INDIVIDUAL;
-
-typedef INDIVIDUAL SWARM[MAX_POP_SIZE];
-
-typedef struct {
-    int particle; // if ocupied, particle is the id, else, -1
-} HABITAT;
-
-typedef HABITAT CELL[MAX_X][MAX_Y];
-
-
-// PSO parameters
+/// PSO parameters
 typedef struct {
 	//
 	unsigned int max_x, max_y;
@@ -87,36 +55,60 @@ typedef struct {
 	double crit;
 	// Keep going until max_evaluations after stop criterion is meet?
 	int crit_keep_going;
-} PARAMETERS;
+} PSO_PARAMS;
 
 typedef struct {
-	PARAMETERS params;
+	int dx;
+	int dy;
+} PSO_NEIGHBOR;
+
+typedef struct {
+	unsigned int num_neighs;
+	const PSO_NEIGHBOR * neighs;
+} PSO_NEIGHBORHOOD;
+
+typedef struct {
+	int x;
+	int y;
+	long double fitness;
+	long double best_fitness_so_far;
+	long double informants_best_fitness_so_far;
+	double * informants_best_position_so_far;
+	double * best_position_so_far;
+	double * position;
+	double * velocity;
+} PSO_PARTICLE;
+
+typedef struct {
+	PSO_PARAMS params;
 	mt_state * prng_states;
 	unsigned int popSize;
 	unsigned int num_threads;
 	pso_func evaluate;
 
 	/// Neighborhood used in PSO.
-	const NEIGHBORHOOD * neighbors;
+	const PSO_NEIGHBORHOOD * neighbors;
 
-    PARTICLE best_position;
-	PARTICLE best_position_so_far;
-	SWARM particle;
-	CELL cell;
+	double * best_position;
+	double * best_position_so_far;
+
+	PSO_PARTICLE * particles;
+	unsigned int ** cell; // if ocupied, particle is the id, else, -1
+
 	long double minFitness;
 	unsigned int evaluations;
 	long double average_fitness;
 	long double best_fitness;
-    long double best_so_far;
+	long double best_so_far;
 	long double worst_fitness;
 	//long double worst_so_far;
 	int best_so_far_id;
-    int worst_id;
+	int worst_id;
 	//int worst_so_far_id;
 } PSO;
 
 // Initialize PSO model.
-PSO * pso_new(PARAMETERS params, pso_func func, unsigned int seed);
+PSO * pso_new(PSO_PARAMS params, pso_func func, unsigned int seed);
 
 // Destroy PSO model.
 void pso_destroy(PSO * pso);
