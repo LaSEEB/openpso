@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
- /**
-  * @file
-  * Implementation of Steady-State Particle Swarm Optimization (SSPSO).
-  *
-  * @author Carlos Fernandes
-  * @author Nuno Fachada
-  */
+/**
+ * @file
+ * A C implementation of several Particle Swarm Optimization (PSO) algorithms.
+ *
+ * @author Carlos Fernandes
+ * @author Nuno Fachada
+ */
 
 // System libraries
 #include <stdio.h>
@@ -21,8 +21,6 @@
 
 // Local libraries
 #include "iniparser.h"
-
-// SSPSO headers
 #include "functions.h"
 #include "pso.h"
 

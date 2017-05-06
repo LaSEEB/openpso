@@ -7,20 +7,23 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+
+#include "fprng.h"
 #include "functions_data.h"
-#include "functions_prng.h"
 #include "mtwist.h"
 #include "functions.h"
 
+/// Pi constant
 #ifndef M_PI
 	#define M_PI acos(-1.0)
 #endif
 
+/// Exp constant (Euler's number)
 #ifndef M_E
 	#define M_E 2.7182818284590452353602874713527
 #endif
 
-
+/// Function's data
 static const double griewank_m_d2[2][2] = GRIEWANK_M_D2;
 static const double griewank_m_d10[10][10] = GRIEWANK_M_D10;
 static const double griewank_m_d30[30][30] = GRIEWANK_M_D30;

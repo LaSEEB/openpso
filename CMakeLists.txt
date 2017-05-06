@@ -1,41 +1,55 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(SSPSO)
+cmake_minimum_required(VERSION 3.2)
+project(pso)
 
-# Compiler options for GCC/Clang
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -std=c99 -pedantic")
+# Require C99 without compiler specific extensions
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 
-find_package(OpenMP QUIET)
-
-option(USE_OPENMP  "Use OpenMP if available?" ON)
+# Compiler options
+if(MSVC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+else()
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
+endif()
 
 # Avoid including MinGW dll dependency
 if(MINGW)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
 endif()
 
+# Try to use OpenMP
+find_package(OpenMP QUIET)
+option(USE_OPENMP  "Use OpenMP if available?" ON)
+
+# Definitions required by mtwist library
 add_definitions("-DMT_GENERATE_CODE_IN_HEADER=0")
 
-# Additional include directories
-add_subdirectory(libs)
+# Directories where to find include files
+include_directories(libs/mtwist libs/iniparser libs/zf_log)
 
-include_directories(libs/mtwist libs/iniparser libs/zf-log)
+# Create standalone functions library
+add_library(benchfuncs SHARED functions.c fprng.c)
 
-# Create functions library
-add_library(benchfuncs SHARED functions.c functions_prng.c)
+# Create standalone PSO library
+add_library(${PROJECT_NAME} SHARED pso.c libs/mtwist/mtwist.c libs/mtwist/randistrs.c
+	libs/zf_log/zf_log.c)
 
-# Create PSO library
-add_library(pso SHARED pso.c)
-target_link_libraries(pso m mtwist zf_log)
+# Set executable name
+set(PSO_EXE_NAME run${PROJECT_NAME})
 
 # Create executable
-add_executable(${PROJECT_NAME} main.c)
-target_link_libraries(${PROJECT_NAME} m mtwist iniparser benchfuncs pso)
+add_executable(${PSO_EXE_NAME} main.c pso.c functions.c fprng.c
+	libs/mtwist/mtwist.c libs/mtwist/randistrs.c libs/iniparser/iniparser.c
+	libs/iniparser/dictionary.c libs/zf_log/zf_log.c)
+target_link_libraries(${PSO_EXE_NAME} m)
 
+# If OpenMP is found and if we are to use it, set appropriate compiler flags
 if (${OPENMP_FOUND} AND ${USE_OPENMP})
-	set_target_properties(${PROJECT_NAME} PROPERTIES
+	set_target_properties(${PSO_EXE_NAME} PROPERTIES
 		COMPILE_FLAGS ${OpenMP_C_FLAGS}
 		LINK_FLAGS ${OpenMP_C_FLAGS})
-	set_target_properties(pso PROPERTIES
+	set_target_properties(${PROJECT_NAME} PROPERTIES
 		COMPILE_FLAGS ${OpenMP_C_FLAGS}
 		LINK_FLAGS ${OpenMP_C_FLAGS})
 	message("Using OpenMP!")
