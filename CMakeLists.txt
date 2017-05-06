@@ -6,12 +6,8 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-# Compiler options
-if(MSVC)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
-else()
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
-endif()
+# Compiler options, only GCC and Clang are supported
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
 
 # Avoid including MinGW dll dependency
 if(MINGW)
