@@ -1,6 +1,9 @@
 *.DAT
 *.gch
-SSPSO
-SSPSO.exe
+runpso
+*.exe
 *.o
-build/
+build*
+*.layout
+*.dll
+*.so
