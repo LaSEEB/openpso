@@ -1,17 +1,17 @@
-# Project: SSPSO
+# Project: pso
 # Makefile created by Dev-C++ 5.11
 
-CPP      = g++.exe
-CC       = gcc.exe
+CPP      = g++.exe -D__DEBUG__
+CC       = gcc.exe -D__DEBUG__
 WINDRES  = windres.exe
-OBJ      = main.o functions.o libs/mtwist/mtwist.o libs/mtwist/randistrs.o libs/iniparser/dictionary.o libs/iniparser/iniparser.o functions_prng.o
-LINKOBJ  = main.o functions.o libs/mtwist/mtwist.o libs/mtwist/randistrs.o libs/iniparser/dictionary.o libs/iniparser/iniparser.o functions_prng.o
-LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib" -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc -fopenmp "%ProgramFiles(x86)%/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/libgomp.dll.a"
-INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"libs/mtwist" -I"libs/iniparser"
-CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++" -I"libs/mtwist" -I"libs/iniparser"
-BIN      = SSPSO.exe
-CXXFLAGS = $(CXXINCS) -std=c99 -w -Wall -Wextra
-CFLAGS   = $(INCS) -std=c99 -w -Wall -Wextra -fopenmp -DMT_GENERATE_CODE_IN_HEADER=0
+OBJ      = libs/mtwist/mtwist.o libs/mtwist/randistrs.o libs/iniparser/dictionary.o libs/iniparser/iniparser.o src/fprng.o src/functions.o src/main.o src/pso.o libs/zf_log/zf_log.o
+LINKOBJ  = libs/mtwist/mtwist.o libs/mtwist/randistrs.o libs/iniparser/dictionary.o libs/iniparser/iniparser.o src/fprng.o src/functions.o src/main.o src/pso.o libs/zf_log/zf_log.o
+LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib" -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc -fopenmp "%ProgramFiles(x86)%/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/libgomp.dll.a" -g3
+INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"libs/mtwist" -I"libs/iniparser" -I"libs/zf_log"
+CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++" -I"libs/mtwist" -I"libs/iniparser" -I"libs/zf_log"
+BIN      = runpso
+CXXFLAGS = $(CXXINCS) -std=c99 -w -Wall -Wextra -pedantic -g3
+CFLAGS   = $(INCS) -std=c99 -w -Wall -Wextra -pedantic -g3 -fopenmp -DMT_GENERATE_CODE_IN_HEADER=0
 RM       = rm.exe -f
 
 .PHONY: all all-before all-after clean clean-custom
@@ -23,12 +23,6 @@ clean: clean-custom
 
 $(BIN): $(OBJ)
 	$(CC) $(LINKOBJ) -o $(BIN) $(LIBS)
-
-main.o: main.c
-	$(CC) -c main.c -o main.o $(CFLAGS)
-
-functions.o: functions.c
-	$(CC) -c functions.c -o functions.o $(CFLAGS)
 
 libs/mtwist/mtwist.o: libs/mtwist/mtwist.c
 	$(CC) -c libs/mtwist/mtwist.c -o libs/mtwist/mtwist.o $(CFLAGS)
@@ -42,5 +36,17 @@ libs/iniparser/dictionary.o: libs/iniparser/dictionary.c
 libs/iniparser/iniparser.o: libs/iniparser/iniparser.c
 	$(CC) -c libs/iniparser/iniparser.c -o libs/iniparser/iniparser.o $(CFLAGS)
 
-functions_prng.o: functions_prng.c
-	$(CC) -c functions_prng.c -o functions_prng.o $(CFLAGS)
+src/fprng.o: src/fprng.c
+	$(CC) -c src/fprng.c -o src/fprng.o $(CFLAGS)
+
+src/functions.o: src/functions.c
+	$(CC) -c src/functions.c -o src/functions.o $(CFLAGS)
+
+src/main.o: src/main.c
+	$(CC) -c src/main.c -o src/main.o $(CFLAGS)
+
+src/pso.o: src/pso.c
+	$(CC) -c src/pso.c -o src/pso.o $(CFLAGS)
+
+libs/zf_log/zf_log.o: libs/zf_log/zf_log.c
+	$(CC) -c libs/zf_log/zf_log.c -o libs/zf_log/zf_log.o $(CFLAGS)
