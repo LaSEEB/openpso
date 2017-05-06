@@ -142,7 +142,7 @@ static void pso_update_particle_pv(PSO * pso, int a, unsigned int iter) {
 
 	float v, x;
 	float pi, pg = 0.0;
-	long double phi1, phi2;
+	double phi1, phi2;
 	float c1, c2;
 	float maxIW, minIW;
 	double omega;

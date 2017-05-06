@@ -82,9 +82,9 @@ typedef struct {
 typedef struct {
 	int x;
 	int y;
-	long double fitness;
-	long double best_fitness_so_far;
-	long double informants_best_fitness_so_far;
+	double fitness;
+	double best_fitness_so_far;
+	double informants_best_fitness_so_far;
 	double * informants_best_position_so_far;
 	double * best_position_so_far;
 	double * position;
