@@ -106,13 +106,13 @@ static const char * pso_validate_params(PSO_PARAMS params) {
 		if (params.nvars < 1)
 			return "Invalid input parameter: numberVariables";
 
-		if (params.iWeightStrategy == 2) //FIXME
+		if (params.iWeightStrategy > 1)
 			return "Invalid input parameter: iWeightStrategy";
 
-		if (params.cStrategy == 2) //FIXME
+		if (params.cStrategy > 1)
 			return "Invalid input parameter: cStrategy";
 
-		if (params.assyInitialization == -1) //FIXME
+		if ((params.assyInitialization < 0) || (params.assyInitialization > 1))
 			return "Invalid input parameter: assyInitialization";
 
 		if (params.initialXmin < -DBL_MAX + 0.1) //FIXME
