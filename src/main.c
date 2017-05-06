@@ -58,6 +58,12 @@
 		else res = vec[n / 2]; \
 	} while (0)
 
+/**
+ * Function for selecting benchmark function.
+ *
+ * @param[in] func ID of benchmark function to use.
+ * @return Pointer to benchmark function to use.
+ */
 static pso_func_opt getSelFunc(unsigned int func) {
 	switch (func) {
 		case 1: return &Sphere;
@@ -83,16 +89,13 @@ static char input_file[MAX_FILENAME_LEN];
 /// Average best so for between runs
 static double * averageBestSoFar;
 /// Average best so far counter
-static int avsf_counter;
-
+static unsigned int avsf_counter;
 /// Number of threads.
 static unsigned int num_threads;
 /// Problem to solve
-unsigned int problem;
+static unsigned int problem;
 // Number of runs
-unsigned int n_runs;
-// Maximum number of evaluations
-unsigned int max_evaluations;
+static unsigned int n_runs;
 
 // Helper function for comparing two doubles
 static int cmpdbl(const void * a, const void * b) {
@@ -116,8 +119,9 @@ static char * uint2str(unsigned int evals) {
 	return str;
 }
 
-// End-of-iteration hook
-void avg_best_so_far(PSO * pso) {
+// End-of-iteration hook for saving fitness averages between runs during the
+// course of the PSO algorithm
+static void avg_best_so_far(PSO * pso) {
 
 	// Is it time to update the average (between runs) best so far?
 	if (pso->evaluations % 100 == 0) {
@@ -238,13 +242,11 @@ int main(int argc, char* argv[]) {
 	parse_params(argc, argv, &params);
 
 	FILE * out;
-	unsigned int i;
 	PSO * pso;
 
 	// Medians for fitness and evaluations
 	float fitmedian, evalsmedian;
 
-	unsigned int counter = 0;
 	unsigned int crit_evals[n_runs];
 	unsigned int successes = 0;
 	double best_so_far[n_runs];
@@ -257,12 +259,13 @@ int main(int argc, char* argv[]) {
 	printf("\n");
 
 	// Initialize averageBestSoFar array, set contents to zero
-	averageBestSoFar = (double *) calloc(max_evaluations / 100, sizeof(double));
+	averageBestSoFar =
+		(double *) calloc(params.max_evaluations / 100, sizeof(double));
 
 	printf("\nRUNS\n----\n");
 
 	// Perform PSO runs
-	for (i = 0; i < n_runs; ++i) {
+	for (unsigned int i = 0; i < n_runs; ++i) {
 
 		// Reset average best so far counter
 		avsf_counter = 0;
@@ -302,20 +305,20 @@ int main(int argc, char* argv[]) {
 	// Save file containing the average (between runs) best so far fitness
 	// after 100, 200, ... evaluations.
 	out = fopen("AVE_BESTSOFAR.DAT", "w");
-	for (i = 0; i < counter; ++i)
+	for (unsigned int i = 0; i < avsf_counter; ++i)
 		fprintf(out, "%.40g\n", (double) averageBestSoFar[i]);
 	fclose(out);
 	free(averageBestSoFar);
 
 	// Save number of evaluations required for getting below stop criterion
 	out = fopen("AES.DAT", "w");
-	for (i = 0; i < n_runs; ++i)
+	for (unsigned int i = 0; i < n_runs; ++i)
 		fprintf(out, "\n%d", crit_evals[i]);
 	fclose(out);
 
 	// Save best so far for each run
 	out = fopen("FINAL.DAT", "w");
-	for (i = 0; i < n_runs; ++i) {
+	for (unsigned int i = 0; i < n_runs; ++i) {
 		fprintf(out, "%.45g\n", best_so_far[i]);
 	}
 	fclose(out);

@@ -620,16 +620,21 @@ void pso_run(PSO * pso) {
 
 void pso_hook_add(PSO * pso, pso_func_hook func) {
 
-	if (pso->n_hooks < pso->alloc_hooks) {
+	if (pso->n_hooks >= pso->alloc_hooks) {
 
-		pso->hooks[pso->n_hooks] = func;
-		pso->n_hooks++;
+		ZF_LOGV("Allocating space for hooks. Was %u, now is %u",
+			pso->alloc_hooks, pso->alloc_hooks + HOOKS_INC);
 
-	} else {
-
+		pso->alloc_hooks = pso->alloc_hooks + HOOKS_INC;
 		pso->hooks = (pso_func_hook *) realloc(pso->hooks,
-			(pso->alloc_hooks + HOOKS_INC) * sizeof(pso_func_hook));
+			pso->alloc_hooks * sizeof(pso_func_hook));
 
 	}
+
+	pso->hooks[pso->n_hooks] = func;
+	pso->n_hooks++;
+
+	ZF_LOGV("Registered hook, hooks count is %u/%u",
+		pso->n_hooks, pso->alloc_hooks);
 
 }
