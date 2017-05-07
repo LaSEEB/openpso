@@ -314,7 +314,7 @@ int main(int argc, char* argv[]) {
 	out = fopen("AES.DAT", "w");
 	for (unsigned int i = 0; i < n_runs; ++i) {
 		if (crit_evals[i] < UINT_MAX) {
-			fprintf(out, "\n%d", crit_evals[i]);
+			fprintf(out, "%u\n", crit_evals[i]);
 		}
 	}
 	fclose(out);
