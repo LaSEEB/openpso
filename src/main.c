@@ -4,7 +4,8 @@
 
 /**
  * @file
- * A C implementation of several Particle Swarm Optimization (PSO) algorithms.
+ * This program is a command-line user interface for performing tests with the
+ * provided pso and functions libraries.
  *
  * @author Carlos Fernandes
  * @author Nuno Fachada
@@ -25,11 +26,23 @@
 #include "pso.h"
 
 // Constants
-#define DEFAULT_INPUT_FILE "input.ini"
+
+/// Default PRNG seed
 #define DEFAULT_PRNG_SEED 1234
-#define MAX_FILENAME_LEN 255
+
 /// Maximum length for strings containing unsigned integers
 #define MAXUISLEN 11
+
+/// Maximum file name length
+#define FILE_MAX_LEN 255
+/// Default input file
+#define FILE_INPUT_DEFAULT "input.ini"
+/// File where to save average best so far fitness between runs
+#define FILE_AVG_BEST_SO_FAR "AVE_BESTSOFAR.DAT"
+/// File where to save number of evaluations required to reach criterion per run
+#define FILE_EVALS "AES.DAT"
+/// File where to save final fitness per run
+#define FILE_FITNESS "FINAL.DAT"
 
 // Useful macros
 
@@ -85,7 +98,7 @@ static pso_func_opt getSelFunc(unsigned int func) {
 /// Seed for pseudo-random number generator.
 static unsigned int prng_seed;
 /// File containing PSO parameters.
-static char input_file[MAX_FILENAME_LEN];
+static char input_file[FILE_MAX_LEN];
 /// Average best so for between runs
 static double * averageBestSoFar;
 /// Average best so far counter
@@ -148,9 +161,9 @@ static void parse_params(int argc, char * argv[], PSO_PARAMS * params) {
 
 	// Did user specify a PSO parameter file?
 	if (argc >= 2)
-		strncpy(input_file, argv[1], MAX_FILENAME_LEN);
+		strncpy(input_file, argv[1], FILE_MAX_LEN);
 	else
-		strncpy(input_file, DEFAULT_INPUT_FILE, MAX_FILENAME_LEN);
+		strncpy(input_file, FILE_INPUT_DEFAULT, FILE_MAX_LEN);
 
 	// Did user specify a PRNG seed?
 	if (argc >= 3)
@@ -171,28 +184,27 @@ static void parse_params(int argc, char * argv[], PSO_PARAMS * params) {
 
 	// Read PSO parameters file
 
-	params->max_x = (unsigned int) iniparser_getint(ini, "pso:max_x", 0);
+	// The following parameters are related to the PSO model itself, and their
+	// validation is performed when creating the PSO model object, not here.
+	params->max_x = (unsigned int)
+		iniparser_getint(ini, "pso:max_x", 0);
 
-	params->max_y = (unsigned int) iniparser_getint(ini, "pso:max_y", 0);
+	params->max_y = (unsigned int)
+		iniparser_getint(ini, "pso:max_y", 0);
 
-	n_runs = (unsigned int) iniparser_getint(ini, "pso:n_runs", 0);
-	if (n_runs < 1)
-		ERROR_EXIT("Invalid input parameter: %s", "n_runs");
+	params->max_t = (unsigned int)
+		iniparser_getint(ini, "pso:max_t", 0);
 
-	params->max_t = (unsigned int) iniparser_getint(ini, "pso:max_t", 0);
+	params->max_evaluations = (unsigned int)
+		iniparser_getint(ini, "pso:max_evaluations", 0);
 
-	params->max_evaluations = (unsigned int) iniparser_getint(ini, "pso:max_evaluations", 0);
-
-	params->algorithm = (unsigned int) iniparser_getint(ini, "pso:algorithm", 0);
+	params->algorithm = (unsigned int)
+		iniparser_getint(ini, "pso:algorithm", 0);
 
 	params->gbest = iniparser_getboolean(ini, "pso:gbest", -1);
 
-	// Neighborhood
-	params->neighborhood = (unsigned int) iniparser_getint(ini, "pso:neighborhood", 3);
-
-	problem = (unsigned int) iniparser_getint(ini, "pso:problem", 0);
-	if ((problem < 1) || (problem > 10))
-		ERROR_EXIT("Invalid input parameter: %s", "problem");
+	params->neighborhood = (unsigned int)
+		iniparser_getint(ini, "pso:neighborhood", 3);
 
 	params->Xmax = iniparser_getdouble(ini, "pso:xmax", -DBL_MAX);
 
@@ -204,21 +216,38 @@ static void parse_params(int argc, char * argv[], PSO_PARAMS * params) {
 
 	params->c = iniparser_getdouble(ini, "pso:c", -DBL_MAX);
 
-	params->nvars = (unsigned int) iniparser_getint(ini, "pso:numbervariables", 0);
+	params->nvars = (unsigned int)
+		iniparser_getint(ini, "pso:numbervariables", 0);
 
-	params->iWeightStrategy = (unsigned int) iniparser_getint(ini, "pso:iweightstrategy", 2);
+	params->iWeightStrategy = (unsigned int)
+		iniparser_getint(ini, "pso:iweightstrategy", 2);
 
-	params->cStrategy = (unsigned int) iniparser_getint(ini, "pso:cstrategy", 2);
+	params->cStrategy = (unsigned int)
+		iniparser_getint(ini, "pso:cstrategy", 2);
 
-	params->assyInitialization = iniparser_getboolean(ini, "pso:assyinitialization", -1);
+	params->assyInitialization =
+		iniparser_getboolean(ini, "pso:assyinitialization", -1);
 
-	params->initialXmin = iniparser_getdouble(ini, "pso:initialxmin", -DBL_MAX);
+	params->initialXmin =
+		iniparser_getdouble(ini, "pso:initialxmin", -DBL_MAX);
 
-	params->initialXmax = iniparser_getdouble(ini, "pso:initialxmax", -DBL_MAX);
+	params->initialXmax =
+		iniparser_getdouble(ini, "pso:initialxmax", -DBL_MAX);
 
 	params->crit = iniparser_getdouble(ini, "pso:crit", -DBL_MAX);
 
- 	params->crit_keep_going = iniparser_getboolean(ini, "pso:crit_keep_going", -1);
+	params->crit_keep_going =
+		iniparser_getboolean(ini, "pso:crit_keep_going", -1);
+
+	// The following parameters are not directly related with the PSO model,
+	// and their validation is performed here.
+	n_runs = (unsigned int) iniparser_getint(ini, "pso:n_runs", 0);
+	if (n_runs < 1)
+		ERROR_EXIT("Invalid input parameter: %s", "n_runs");
+
+	problem = (unsigned int) iniparser_getint(ini, "pso:problem", 0);
+	if ((problem < 1) || (problem > 10))
+		ERROR_EXIT("Invalid input parameter: %s", "problem");
 
 	// Release dictionary object
 	iniparser_freedict(ini);
@@ -236,20 +265,29 @@ static void parse_params(int argc, char * argv[], PSO_PARAMS * params) {
  */
 int main(int argc, char* argv[]) {
 
+	/// PSO parameters, to be read from file
 	PSO_PARAMS params;
 
-	// Parse command-line arguments and read PSO parameter file.
+	// Parse command-line arguments and read PSO parameter file - this must be
+	// here in order to read number of runs, although number of runs could be a
+	// command-line argument instead
 	parse_params(argc, argv, &params);
 
+	// Aux. file pointer
 	FILE * out;
+	// PSO model object, from pso library
 	PSO * pso;
 
 	// Medians for fitness and evaluations
 	float fitmedian, evalsmedian;
 
+	// Number of evaluations required to reach criterion per run
 	unsigned int crit_evals[n_runs];
-	unsigned int successes = 0;
+	// Final fitness per run
 	double best_so_far[n_runs];
+	// Number of successes, i.e. number of times that criterion was reach with
+	// number of evaluations < max_evaluations
+	unsigned int successes = 0;
 
 	// Show parameter information to user
 	printf("\nPARAMS\n------\n");
@@ -304,14 +342,14 @@ int main(int argc, char* argv[]) {
 
 	// Save file containing the average (between runs) best so far fitness
 	// after 100, 200, ... evaluations.
-	out = fopen("AVE_BESTSOFAR.DAT", "w");
+	out = fopen(FILE_AVG_BEST_SO_FAR, "w");
 	for (unsigned int i = 0; i < avsf_counter; ++i)
 		fprintf(out, "%.40g\n", (double) averageBestSoFar[i]);
 	fclose(out);
 	free(averageBestSoFar);
 
 	// Save number of evaluations required for getting below stop criterion
-	out = fopen("AES.DAT", "w");
+	out = fopen(FILE_EVALS, "w");
 	for (unsigned int i = 0; i < n_runs; ++i) {
 		if (crit_evals[i] < UINT_MAX) {
 			fprintf(out, "%u\n", crit_evals[i]);
@@ -320,7 +358,7 @@ int main(int argc, char* argv[]) {
 	fclose(out);
 
 	// Save best so far for each run
-	out = fopen("FINAL.DAT", "w");
+	out = fopen(FILE_FITNESS, "w");
 	for (unsigned int i = 0; i < n_runs; ++i) {
 		fprintf(out, "%.45g\n", best_so_far[i]);
 	}

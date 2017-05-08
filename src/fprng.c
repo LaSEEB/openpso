@@ -1,11 +1,22 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- 
+
+/**
+ * @file
+ * Implementation of a no-seed uniform PRNG function which returns doubles
+ * between 0 and 1. The PRNG is used to create noise for some of the
+ * benchmarking optimization functions.
+ *
+ * @author Carlos Fernandes
+ * @author Nuno Fachada
+ */
+
 #include <math.h>
 #include <inttypes.h>
 #include <time.h>
 
+// Constants to be used by the MRG32k3a PRNG.
 #define norm 2.328306549295728e-10
 #define m1   4294967087.0
 #define m2   4294944443.0
@@ -14,13 +25,19 @@
 #define a21      527612.0
 #define a23n    1370589.0
 
-/* Separate state into sub-states. This is done in an arbitrary fashion,
- * but must follow these rules:
- * - s10, s11, s12 must be integers in [0, m1 - 1] and not all 0.
- * - s20, s21, s22 must be integers in [0, m2 - 1] and not all 0. */
+/**
+ * This is the MRG32k3a 32-bits random number generator U(0,1) by Pierre
+ * L'Ecuyer.
+ *
+ * @see http://simul.iro.umontreal.ca/rng/MRG32k3a.c
+ * @see http://pubsonline.informs.org/doi/abs/10.1287/opre.47.1.159
+ */
 static double MRG32k3a(
 	double s10, double s11, double s12, double s20, double s21, double s22) {
 
+	/* Sub-states must follow these rules:
+	 * - s10, s11, s12 must be integers in [0, m1 - 1] and not all 0.
+	 * - s20, s21, s22 must be integers in [0, m2 - 1] and not all 0. */
 	s10 = (double) (((long) s10) % ((long) m1));
 	s11 = (double) (((long) s11) % ((long) m1));
 	s12 = (double) (((long) s12) % ((long) m1));
@@ -57,6 +74,7 @@ static double MRG32k3a(
 	return ((p1 - p2) * norm);
 }
 
+// Structure used to mix entropy sources for seeding the PRNG.
 typedef union {
 	uint64_t s64;
 	struct {
@@ -66,6 +84,20 @@ typedef union {
 	double sd;
 } flex;
 
+/**
+ * Return random double between 0 and 1.
+ *
+ * This function is to be used by some of the benchmarking optimization
+ * functions, using the following sources of entropy in order to avoid keeping
+ * track of the PRNG state:
+ *
+ * * Local function value (given in `vars` and `nvars`).
+ * * Current time.
+ * * Memory addresses of functions and variables included in this code.
+ *
+ * In practice this function uses this entropy to seed the MRG32k3a PRNG
+ * on-the-fly, and then calls MRG32k3a once.
+ */
 double runif01(double * vars, unsigned int nvars) {
 
 	// Union variable used to mix seeds
@@ -80,7 +112,8 @@ double runif01(double * vars, unsigned int nvars) {
 		(uintptr_t) &maxfor};
 
 	// Seeds vector for MRG32k3a PRNG
-	double seeds[6] = {masks[5], masks[3], masks[0], masks[3], masks[2], masks[1]};
+	double seeds[6] =
+		{masks[5], masks[3], masks[0], masks[3], masks[2], masks[1]};
 
 	// Seed mixing
 	for (unsigned int i = 0; i < maxfor; ++i) {

@@ -22,6 +22,11 @@
 #include "randistrs.h"
 #include "zf_log.h"
 
+// When hooks array is full/not initialized, by how much should we increment
+// the hooks array capacity?
+#define HOOKS_INC 2
+
+/// If PSO terminates with error, error message will be placed here
 const char * pso_error = NULL;
 
 // Known neighborhoods
@@ -42,10 +47,19 @@ static const PSO_NEIGHBORHOOD neighbors_ring = {
 	.num_neighs = 3,
 	.neighs = (PSO_NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
 
-/// Internal function for hashing PRNG seed with thread ID
+/**
+ * Internal function for hashing PRNG seed with thread ID.
+ *
+ * @param[in] seed Global PRNG seed.
+ * @param[in] tid Thread ID.
+ * @return A thread-specific PRNG seed.
+ */
 static uint32_t pso_mixseed(uint32_t seed, uint32_t tid) {
 
-	// Hash seed
+	// A different base seed for each thread
+	seed += tid;
+
+	// Hash base seed
 	seed  = (seed + 0x7ed55d16) + (seed << 12);
 	seed  = (seed + 0x165667b1) + (seed << 5);
 	seed  = (seed ^ 0xc761c23c) ^ (seed >> 19);
@@ -64,6 +78,12 @@ static uint32_t pso_mixseed(uint32_t seed, uint32_t tid) {
 	return seed ^ tid;
 }
 
+/**
+ * Validate PSO parameters.
+ *
+ * @param[in] params The PSO parameters to validate.
+ * @return `NULL` if no error is found, or the error string otherwise.
+ */
 static const char * pso_validate_params(PSO_PARAMS params) {
 
 		if (params.max_x < 1)
@@ -129,7 +149,6 @@ static const char * pso_validate_params(PSO_PARAMS params) {
 
 		return NULL;
 }
-
 
 /**
  * Update position and velocity of a particle.
@@ -376,7 +395,7 @@ PSO * pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 	pso->best_so_far = pso->particles[0].fitness;
 	pso->best_so_far_id = 0;
 	pso->evaluations = 0;
-	pso->minFitness = pso->particles[0].fitness;
+	pso->min_fitness = pso->particles[0].fitness;
 	pso->worst_id = 0;
 
 	// Return initialized PSO model
@@ -423,9 +442,12 @@ void pso_destroy(PSO * pso) {
 }
 
 /**
- * Update population data. Let particles know about particle with
- * best and worst fitness in the population and calculate the average fitness
- * in the population.
+ * Update population data. Let particles know about particle with best and
+ * worst fitness in the population and calculate the average fitness in the
+ * population.
+ *
+ * Client code will not usually call this function directly, unless more control
+ * is desired in the way the PSO algorithm advances.
  *
  * @param[in,out] PSO model to update.
  */
@@ -491,6 +513,9 @@ void pso_update_pop_data(PSO * pso) {
 
 /**
  * Update position and velocity of all or some of the particles.
+ *
+ * Client code will not usually call this function directly, unless more control
+ * is desired in the way the PSO algorithm advances.
  *
  * @param[in] iter Iteration count for current run.
  * @param[in,out] pso PSO model containing particles to move.
@@ -573,7 +598,15 @@ void pso_update_particles(unsigned int iter, PSO * pso) {
 
 }
 
-/// PSO algorithm
+/**
+ * Execute a complete PSO algorithm.
+ *
+ * Client code will usually call this function to run the PSO. For more control
+ * client code can call the ::pso_update_pop_data() and ::pso_update_particles()
+ * functions.
+ *
+ * @param[in,out] pso The PSO model object.
+ */
 void pso_run(PSO * pso) {
 
 	// Aux. variables for current run
@@ -616,12 +649,20 @@ void pso_run(PSO * pso) {
 
 }
 
-#define HOOKS_INC 2
-
+/**
+ * Add end-of-iteration hook function to the PSO model which will be call at
+ * the end of each iteration of the complete PSO algorithm invoked with the
+ * ::pso_run() function.
+ *
+ * @param[in,out] pso The PSO model object.
+ * @param[in] func The hook function to be called at the end of each iteration.
+ */
 void pso_hook_add(PSO * pso, pso_func_hook func) {
 
+	// Do we have space for more hooks?
 	if (pso->n_hooks >= pso->alloc_hooks) {
 
+		// If not, let's allocate some space
 		ZF_LOGV("Allocating space for hooks. Was %u, now is %u",
 			pso->alloc_hooks, pso->alloc_hooks + HOOKS_INC);
 
@@ -631,6 +672,7 @@ void pso_hook_add(PSO * pso, pso_func_hook func) {
 
 	}
 
+	// Add hook
 	pso->hooks[pso->n_hooks] = func;
 	pso->n_hooks++;
 

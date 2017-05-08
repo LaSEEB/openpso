@@ -31,6 +31,7 @@ typedef void (* pso_func_hook)(PSO * pso);
 
 /// PSO parameters
 typedef struct {
+
 	//
 	unsigned int max_x, max_y;
 	//Maximum number of iterations
@@ -67,6 +68,7 @@ typedef struct {
 	double crit;
 	// Keep going until max_evaluations after stop criterion is meet?
 	int crit_keep_going;
+
 } PSO_PARAMS;
 
 typedef struct {
@@ -92,6 +94,7 @@ typedef struct {
 } PSO_PARTICLE;
 
 struct pso {
+
 	PSO_PARAMS params;
 	mt_state * prng_states;
 	unsigned int popSize;
@@ -115,7 +118,7 @@ struct pso {
 	unsigned int evaluations;
 	unsigned int crit_evals;
 
-	double minFitness;
+	double min_fitness;
 	double average_fitness;
 	double best_fitness;
 	double best_so_far;
@@ -138,10 +141,10 @@ void pso_update_pop_data(PSO * pso);
 // Update position and velocity of all or some of the particles.
 void pso_update_particles(unsigned int iter, PSO * pso);
 
-/// PSO algorithm
+// Run PSO algorithm
 void pso_run(PSO * pso);
 
+// Add end-of-iteration hook.
 void pso_hook_add(PSO * pso, pso_func_hook func);
-
 
 #endif
