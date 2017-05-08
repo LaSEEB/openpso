@@ -467,32 +467,41 @@ void pso_update_pop_data(PSO * pso) {
 			pso->worst_id = i;
 		}
 
-		// Updates best_so_far in population
+		// Updates best fitness/position so far in population (i.e. all
+		// iterations so far)
 		if (pso->particles[i].fitness < pso->best_so_far) {
+
 			pso->best_so_far = pso->particles[i].fitness;
+
 			memmove(pso->best_position_so_far,
 				pso->particles[i].position,
 				pso->params.nvars * sizeof(double));
 		}
 
-		// Updates best in current population
+		// Updates best fitness/position in population (current iteration)
 		if (pso->particles[i].fitness < pso->best_fitness) {
+
 			pso->best_fitness = pso->particles[i].fitness;
-			memmove(pso->best_position,
+
+			memmove(pso->best_position, // TODO No need to memmove, a pointer suffices?
 				pso->particles[i].position,
 				pso->params.nvars * sizeof(double));
 		}
 
-		// Updates particle's best position
+		// Updates current particle's best fitness/position so far (i.e. all
+		// iterations so far)
 		if (pso->particles[i].fitness < pso->particles[i].best_fitness_so_far) {
+
 			pso->particles[i].best_fitness_so_far = pso->particles[i].fitness;
+
 			memmove(pso->particles[i].best_position_so_far,
 				pso->particles[i].position,
 				pso->params.nvars * sizeof(double));
 
 		}
 
-		// Updates best informant
+		// Updates current particle's best informant so far (i.e. all iterations
+		// so far)
 		if (pso->particles[i].fitness <
 				pso->particles[i].informants_best_fitness_so_far) {
 
