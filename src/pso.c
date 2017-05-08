@@ -301,8 +301,6 @@ PSO * pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 	pso->evaluate = func;
 
 	// Initialize best position vectors
-	pso->best_position =
-		(double *) calloc(pso->params.nvars, sizeof(double));
 	pso->best_position_so_far =
 		(double *) calloc(pso->params.nvars, sizeof(double));
 
@@ -431,7 +429,6 @@ void pso_destroy(PSO * pso) {
 	free(pso->cell);
 
 	// Release best position vectors
-	free(pso->best_position);
 	free(pso->best_position_so_far);
 
 	// Release hooks
@@ -483,9 +480,9 @@ void pso_update_pop_data(PSO * pso) {
 
 			pso->best_fitness = pso->particles[i].fitness;
 
-			memmove(pso->best_position, // TODO No need to memmove, a pointer suffices?
-				pso->particles[i].position,
-				pso->params.nvars * sizeof(double));
+			// Here we don't need a memmove - a pointer update is enough
+			pso->best_position = pso->particles[i].position;
+
 		}
 
 		// Updates current particle's best fitness/position so far (i.e. all
