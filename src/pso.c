@@ -555,7 +555,7 @@ void pso_update_particles(unsigned int iter, PSO * pso) {
 
 	// Cycle through particles
 #ifdef _OPENMP
-	#pragma omp parallel for reduction(+:evals)
+	#pragma omp parallel for reduction(+:evals) schedule(dynamic, 1)
 #endif
 	for (unsigned int a = 0; a < pso->popSize; ++a) {
 		// By default particle update is set to 0 (only relevant to SS-PSO)
