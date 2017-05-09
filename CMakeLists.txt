@@ -8,10 +8,18 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 # Compiler options, only GCC and Clang are supported
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}" )
 
 # Avoid including MinGW dll dependency
 if(MINGW)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
+endif()
+
+# Profiling info option
+option(PROFILING "Add profiling flags?" OFF)
+if (PROFILING)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+	set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pg" )
 endif()
 
 # Try to use OpenMP
