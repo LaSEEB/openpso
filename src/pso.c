@@ -47,13 +47,8 @@ static const PSO_NEIGHBORHOOD neighbors_ring = {
 	.num_neighs = 3,
 	.neighs = (PSO_NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
 
-struct val_id { double val; unsigned int id; };
-#pragma omp declare reduction(minvalid : struct val_id : \
-	omp_out = omp_in.val < omp_out.val ? omp_in : omp_out) \
-	initializer (omp_priv={ .val = DBL_MAX, .id = 0 })
-#pragma omp declare reduction(maxvalid : struct val_id : \
-	omp_out = omp_in.val > omp_out.val ? omp_in : omp_out) \
-	initializer (omp_priv={ .val = 0, .id = 0 })
+/// Variables with this structure will hold a fitness/particleID pair.
+struct fit_id { double fit; unsigned int id; };
 
 /**
  * Internal function for hashing PRNG seed with thread ID.
@@ -459,32 +454,46 @@ void pso_destroy(PSO * pso) {
 void pso_update_pop_data(PSO * pso) {
 
 	// Reset best and worst fitnesses
-	struct val_id
-		worst_fitness = { .val = 0.0, .id = 0 },
-		best_fitness = { .val = pso->particles[0].fitness, .id = 0 };
+	struct fit_id
+		worst_fitness = { .fit = 0.0, .id = 0 },
+		best_fitness = { .fit = pso->particles[0].fitness, .id = 0 };
 	double sum_fitness = 0;
 
-	// Cycle through particles
-#ifdef _OPENMP
+// Uncomment the block below to parallelize the following for loop.
+// Unfortunately, since this function executes really fast, the overhead of
+// multithreading outweighs the potential parallelization gains.
+
+/* #ifdef _OPENMP
+	// Declare a "min" reduction operator which also keeps the particle ID
+	#pragma omp declare reduction(min_fit_id : struct fit_id : \
+		omp_out = omp_in.fit < omp_out.fit ? omp_in : omp_out) \
+		initializer (omp_priv={ .fit = DBL_MAX, .id = 0 })
+	// Declare a "max" reduction operator which also keeps the particle ID
+	#pragma omp declare reduction(max_fit_id : struct fit_id : \
+		omp_out = omp_in.fit > omp_out.fit ? omp_in : omp_out) \
+		initializer (omp_priv={ .fit = 0, .id = 0 })
+	// Declare a "min" reduction operator which also keeps the particle ID
 	#pragma omp parallel for \
-		reduction(maxvalid:worst_fitness) \
+		reduction(max_fit_id:worst_fitness) \
 		reduction(+:sum_fitness) \
-		reduction(minvalid:best_fitness)
-#endif
+		reduction(min_fit_id:best_fitness)
+#endif */
+
+	// Cycle through particles
 	for (unsigned int i = 0; i < pso->popSize; ++i) {
 
 		// Updates worst in population
-		if (pso->particles[i].fitness > worst_fitness.val) {
+		if (pso->particles[i].fitness > worst_fitness.fit) {
 
-			worst_fitness.val = pso->particles[i].fitness;
+			worst_fitness.fit = pso->particles[i].fitness;
 			worst_fitness.id = i;
 
 		}
 
 		// Updates best fitness/position in population (current iteration)
-		if (pso->particles[i].fitness < best_fitness.val) {
+		if (pso->particles[i].fitness < best_fitness.fit) {
 
-			best_fitness.val = pso->particles[i].fitness;
+			best_fitness.fit = pso->particles[i].fitness;
 			best_fitness.id = i;
 
 		}
@@ -518,18 +527,18 @@ void pso_update_pop_data(PSO * pso) {
 	}
 
 	// Update global worst fitness
-	pso->worst_fitness = worst_fitness.val;
+	pso->worst_fitness = worst_fitness.fit;
 	pso->worst_id = worst_fitness.id;
 
 	// Update global best fitness/position for current iteration
-	pso->best_fitness = best_fitness.val;
+	pso->best_fitness = best_fitness.fit;
 	pso->best_position = pso->particles[best_fitness.id].position;
 
 	// Updates best fitness/position so far in population (i.e. all
 	// iterations so far)
-	if (pso->best_so_far > best_fitness.val) {
+	if (pso->best_so_far > best_fitness.fit) {
 
-		pso->best_so_far = best_fitness.val;
+		pso->best_so_far = best_fitness.fit;
 		pso->best_so_far_id = best_fitness.id;
 		memmove(pso->best_position_so_far,
 			pso->particles[best_fitness.id].position,
