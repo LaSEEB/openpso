@@ -47,6 +47,14 @@ static const PSO_NEIGHBORHOOD neighbors_ring = {
 	.num_neighs = 3,
 	.neighs = (PSO_NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
 
+struct val_id { double val; unsigned int id; };
+#pragma omp declare reduction(minvalid : struct val_id : \
+	omp_out = omp_in.val < omp_out.val ? omp_in : omp_out) \
+	initializer (omp_priv={ .val = DBL_MAX, .id = 0 })
+#pragma omp declare reduction(maxvalid : struct val_id : \
+	omp_out = omp_in.val > omp_out.val ? omp_in : omp_out) \
+	initializer (omp_priv={ .val = 0, .id = 0 })
+
 /**
  * Internal function for hashing PRNG seed with thread ID.
  *
@@ -451,37 +459,33 @@ void pso_destroy(PSO * pso) {
 void pso_update_pop_data(PSO * pso) {
 
 	// Reset best and worst fitnesses
-	pso->best_fitness = pso->particles[0].fitness;
-	pso->worst_fitness = 0;
-	pso->average_fitness = 0;
+	struct val_id
+		worst_fitness = { .val = 0.0, .id = 0 },
+		best_fitness = { .val = pso->particles[0].fitness, .id = 0 };
+	double sum_fitness = 0;
 
 	// Cycle through particles
+#ifdef _OPENMP
+	#pragma omp parallel for \
+		reduction(maxvalid:worst_fitness) \
+		reduction(+:sum_fitness) \
+		reduction(minvalid:best_fitness)
+#endif
 	for (unsigned int i = 0; i < pso->popSize; ++i) {
 
 		// Updates worst in population
-		if (pso->particles[i].fitness > pso->worst_fitness) {
-			pso->worst_fitness = pso->particles[i].fitness;
-			pso->worst_id = i;
-		}
+		if (pso->particles[i].fitness > worst_fitness.val) {
 
-		// Updates best fitness/position so far in population (i.e. all
-		// iterations so far)
-		if (pso->particles[i].fitness < pso->best_so_far) {
+			worst_fitness.val = pso->particles[i].fitness;
+			worst_fitness.id = i;
 
-			pso->best_so_far = pso->particles[i].fitness;
-
-			memmove(pso->best_position_so_far,
-				pso->particles[i].position,
-				pso->params.nvars * sizeof(double));
 		}
 
 		// Updates best fitness/position in population (current iteration)
-		if (pso->particles[i].fitness < pso->best_fitness) {
+		if (pso->particles[i].fitness < best_fitness.val) {
 
-			pso->best_fitness = pso->particles[i].fitness;
-
-			// Here we don't need a memmove - a pointer update is enough
-			pso->best_position = pso->particles[i].position;
+			best_fitness.val = pso->particles[i].fitness;
+			best_fitness.id = i;
 
 		}
 
@@ -510,11 +514,30 @@ void pso_update_pop_data(PSO * pso) {
 				pso->params.nvars * sizeof(double));
 		}
 
-		pso->average_fitness = pso->average_fitness + pso->particles[i].fitness;
+		sum_fitness += pso->particles[i].fitness;
+	}
+
+	// Update global worst fitness
+	pso->worst_fitness = worst_fitness.val;
+	pso->worst_id = worst_fitness.id;
+
+	// Update global best fitness/position for current iteration
+	pso->best_fitness = best_fitness.val;
+	pso->best_position = pso->particles[best_fitness.id].position;
+
+	// Updates best fitness/position so far in population (i.e. all
+	// iterations so far)
+	if (pso->best_so_far > best_fitness.val) {
+
+		pso->best_so_far = best_fitness.val;
+		pso->best_so_far_id = best_fitness.id;
+		memmove(pso->best_position_so_far,
+			pso->particles[best_fitness.id].position,
+			pso->params.nvars * sizeof(double));
 	}
 
 	// Determine average fitness in the population
-	pso->average_fitness = pso->average_fitness / pso->popSize;
+	pso->average_fitness = sum_fitness / pso->popSize;
 }
 
 /**
