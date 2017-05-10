@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(pso)
+project(openpso)
 
 # Require C99 without compiler specific extensions
 set(CMAKE_C_STANDARD 99)
@@ -40,7 +40,7 @@ add_library(${PROJECT_NAME} SHARED src/pso.c
 	libs/mtwist/mtwist.c libs/mtwist/randistrs.c libs/zf_log/zf_log.c)
 
 # Set executable name
-set(PSO_EXE_NAME run${PROJECT_NAME})
+set(PSO_EXE_NAME ${PROJECT_NAME}cli)
 
 # Create executable
 add_executable(${PSO_EXE_NAME} src/main.c src/pso.c src/functions.c src/fprng.c
