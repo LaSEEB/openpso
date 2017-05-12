@@ -89,68 +89,68 @@ static uint32_t pso_mixseed(uint32_t seed, uint32_t tid) {
  */
 static const char * pso_validate_params(PSO_PARAMS params) {
 
-		if (params.max_x < 1)
-			return "Invalid input parameter: max_x";
+	if (params.max_x < 1)
+		return "Invalid input parameter: max_x";
 
-		if (params.max_y < 1)
-			return "Invalid input parameter: max_y";
+	if (params.max_y < 1)
+		return "Invalid input parameter: max_y";
 
-		if (params.max_t < 1)
-			return "Invalid input parameter: max_t";
+	if (params.max_t < 1)
+		return "Invalid input parameter: max_t";
 
-		if (params.max_evaluations < 1)
-			return "Invalid input parameter: max_evaluations";
+	if (params.max_evaluations < 1)
+		return "Invalid input parameter: max_evaluations";
 
-		if ((params.algorithm < 1) || (params.algorithm > 2))
-			return "Invalid input parameter: algorithm";
+	if ((params.algorithm < 1) || (params.algorithm > 2))
+		return "Invalid input parameter: algorithm";
 
-		if ((params.gbest < 0) || (params.gbest > 1))
-			return "Invalid input parameter: gbest";
+	if ((params.gbest < 0) || (params.gbest > 1))
+		return "Invalid input parameter: gbest";
 
-		if (params.neighborhood > 2) { // Moore
-			return "Invalid input parameter: neighborhood";
-		}
+	if (params.neighborhood > 2) { // Moore
+		return "Invalid input parameter: neighborhood";
+	}
 
-		if (params.Xmax < -DBL_MAX + 0.1) //FIXME
-			return "Invalid input parameter: Xmax";
+	if (params.Xmax < -DBL_MAX + 0.1) //FIXME
+		return "Invalid input parameter: Xmax";
 
-		if (params.Vmax < -DBL_MAX + 0.1) //FIXME
-			return "Invalid input parameter: Vmax";
+	if (params.Vmax < -DBL_MAX + 0.1) //FIXME
+		return "Invalid input parameter: Vmax";
 
-		if (params.chi < -DBL_MAX + 0.1) //FIXME
-			return "Invalid input parameter: chi";
+	if (params.chi < -DBL_MAX + 0.1) //FIXME
+		return "Invalid input parameter: chi";
 
-		if (params.omega < -DBL_MAX + 0.1) //FIXME
-			return "Invalid input parameter: omega";
+	if (params.omega < -DBL_MAX + 0.1) //FIXME
+		return "Invalid input parameter: omega";
 
-		if (params.c < -DBL_MAX + 0.1) //FIXME
-			return "Invalid input parameter: c";
+	if (params.c < -DBL_MAX + 0.1) //FIXME
+		return "Invalid input parameter: c";
 
-		if (params.nvars < 1)
-			return "Invalid input parameter: numberVariables";
+	if (params.nvars < 1)
+		return "Invalid input parameter: numberVariables";
 
-		if (params.iWeightStrategy > 1)
-			return "Invalid input parameter: iWeightStrategy";
+	if (params.iWeightStrategy > 1)
+		return "Invalid input parameter: iWeightStrategy";
 
-		if (params.cStrategy > 1)
-			return "Invalid input parameter: cStrategy";
+	if (params.cStrategy > 1)
+		return "Invalid input parameter: cStrategy";
 
-		if ((params.assyInitialization < 0) || (params.assyInitialization > 1))
-			return "Invalid input parameter: assyInitialization";
+	if ((params.assyInitialization < 0) || (params.assyInitialization > 1))
+		return "Invalid input parameter: assyInitialization";
 
-		if (params.initialXmin < -DBL_MAX + 0.1) //FIXME
-			return "Invalid input parameter: initialXmin";
+	if (params.initialXmin < -DBL_MAX + 0.1) //FIXME
+		return "Invalid input parameter: initialXmin";
 
-		if (params.initialXmax < -DBL_MAX + 0.1) //FIXME
-			return "Invalid input parameter: initialXmax";
+	if (params.initialXmax < -DBL_MAX + 0.1) //FIXME
+		return "Invalid input parameter: initialXmax";
 
-		if (params.crit < -DBL_MAX + 0.1) //FIXME and am I needed here?
-			return "Invalid input parameter: crit";
+	if (params.crit < -DBL_MAX + 0.1) //FIXME and am I needed here?
+		return "Invalid input parameter: crit";
 
-		if (params.crit_keep_going == -1) //FIXME and am I needed here?
-			return "Invalid input parameter: crit_keep_going";
+	if (params.crit_keep_going == -1) //FIXME and am I needed here?
+		return "Invalid input parameter: crit_keep_going";
 
-		return NULL;
+	return NULL;
 }
 
 /**
@@ -472,7 +472,8 @@ void pso_update_pop_data(PSO * pso) {
 	#pragma omp declare reduction(max_fit_id : struct fit_id : \
 		omp_out = omp_in.fit > omp_out.fit ? omp_in : omp_out) \
 		initializer (omp_priv={ .fit = 0, .id = 0 })
-	// Declare a "min" reduction operator which also keeps the particle ID
+	// Parallel for pragma, perform reduction on worst_fitness, sum_fitness and
+	// best_fitness
 	#pragma omp parallel for \
 		reduction(max_fit_id:worst_fitness) \
 		reduction(+:sum_fitness) \
