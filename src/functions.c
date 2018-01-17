@@ -38,7 +38,7 @@ static const double griewank_m_d30[30][30] = GRIEWANK_M_D30;
 static const double griewank_m_d50[50][50] = GRIEWANK_M_D50;
 
 /// Sphere function
-double Sphere(double * vars, unsigned int nvars) {
+double Sphere(double *vars, unsigned int nvars) {
 
 	unsigned int i;
 	double fitness = 0.0;
@@ -51,7 +51,7 @@ double Sphere(double * vars, unsigned int nvars) {
 }
 
 /// Quadric function
-double Quadric(double * vars, unsigned int nvars) {
+double Quadric(double *vars, unsigned int nvars) {
 
 	unsigned int i, j;
 	double fitaux, fitness = 0.0;
@@ -70,7 +70,7 @@ double Quadric(double * vars, unsigned int nvars) {
 }
 
 /// Hyperellipsoid function
-double Hyper(double * vars, unsigned int nvars) {
+double Hyper(double *vars, unsigned int nvars) {
 
 	unsigned int i;
 	double fitness = 0.0;
@@ -83,7 +83,7 @@ double Hyper(double * vars, unsigned int nvars) {
 }
 
 /// Rastringin function
-double Rastrigin(double * vars, unsigned int nvars) {
+double Rastrigin(double *vars, unsigned int nvars) {
 
 	unsigned int i;
 	double fitness = 0.0;
@@ -97,7 +97,7 @@ double Rastrigin(double * vars, unsigned int nvars) {
 }
 
 /// Griewank function
-double Griewank(double * vars, unsigned int nvars) {
+double Griewank(double *vars, unsigned int nvars) {
 
 	unsigned int i;
 	double fitness1, fitness2, fitness;
@@ -115,7 +115,7 @@ double Griewank(double * vars, unsigned int nvars) {
 }
 
 /// Schaffer function No. 6
-double Schaffer6(double * vars, unsigned int nvars) {
+double Schaffer6(double *vars, unsigned int nvars) {
 
 	double x, y;
 	double temp1, temp2;
@@ -131,7 +131,7 @@ double Schaffer6(double * vars, unsigned int nvars) {
 }
 
 /// Weierstrass function
-double Weierstrass(double * vars, unsigned int nvars) {
+double Weierstrass(double *vars, unsigned int nvars) {
 
 	unsigned int i, j;
 	double res;
@@ -162,7 +162,7 @@ double Weierstrass(double * vars, unsigned int nvars) {
 }
 
 /// Ackley function
-double Ackley(double * vars, unsigned int nvars) {
+double Ackley(double *vars, unsigned int nvars) {
 
 	double fitness;
 	unsigned int j;
@@ -184,7 +184,7 @@ double Ackley(double * vars, unsigned int nvars) {
 }
 
 /// Shifted Quadric With Noise function, also know as Shifted Schwefel 2 w/ Noise
-double ShiftedQuadricWithNoise(double * vars, unsigned int nvars) {
+double ShiftedQuadricWithNoise(double *vars, unsigned int nvars) {
 
 	const double o[] = SCHWEFEL_102_DATA;
 	unsigned int i, j;
@@ -208,7 +208,7 @@ double ShiftedQuadricWithNoise(double * vars, unsigned int nvars) {
 }
 
 /// Rotated Griewank function
-double RotatedGriewank(double * vars, unsigned int nvars) {
+double RotatedGriewank(double *vars, unsigned int nvars) {
 
 	const double (*m)[nvars];
 	unsigned int i, j;
@@ -236,6 +236,6 @@ double RotatedGriewank(double * vars, unsigned int nvars) {
 }
 
 // Basic function used to test the internal noise-generating PRNG
-double Random01(double * vars, unsigned int nvars) {
+double Random01(double *vars, unsigned int nvars) {
 	return runif01(vars, nvars);
 }

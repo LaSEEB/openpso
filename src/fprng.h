@@ -16,6 +16,6 @@
 #define __FPRNG_H_
 
 // Return random double between 0 and 1.
-double runif01(double * vars, unsigned int nvars);
+double runif01(double *vars, unsigned int nvars);
 
 #endif

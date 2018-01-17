@@ -111,14 +111,14 @@ static unsigned int problem;
 static unsigned int n_runs;
 
 // Helper function for comparing two doubles
-static int cmpdbl(const void * a, const void * b) {
+static int cmpdbl(const void *a, const void *b) {
 	if (*(double*) a > *(double*) b) return 1;
 	else if (*(double*) a < *(double*) b) return -1;
 	else return 0;
 }
 
 // Helper function for comparing two unsigned integers
-static int cmpuint(const void * a, const void * b) {
+static int cmpuint(const void *a, const void *b) {
 	if (*(unsigned int*) a > *(unsigned int*) b) return 1;
 	else if (*(unsigned int*) a < *(unsigned int*) b) return -1;
 	else return 0;
@@ -126,7 +126,7 @@ static int cmpuint(const void * a, const void * b) {
 
 // Helper function for converting unsigned integer to string
 // Cannot be called by threaded code
-static char * uint2str(unsigned int evals) {
+static char *uint2str(unsigned int evals) {
 	static char str[MAXUISLEN]; // Not thread-safe
 	snprintf(str, MAXUISLEN * sizeof(char), "%u", evals);
 	return str;
@@ -134,7 +134,7 @@ static char * uint2str(unsigned int evals) {
 
 // End-of-iteration hook for saving fitness averages between runs during the
 // course of the PSO algorithm
-static void avg_best_so_far(PSO * pso) {
+static void avg_best_so_far(PSO *pso) {
 
 	// Is it time to update the average (between runs) best so far?
 	if (pso->evaluations % 100 == 0) {
@@ -154,10 +154,10 @@ static void avg_best_so_far(PSO * pso) {
  * @return `EXIT_SUCCESS` if program executes successfully, `EXIT_FAILURE`
  * otherwise.
  */
-static void parse_params(int argc, char * argv[], PSO_PARAMS * params) {
+static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 
 	// INI object
-	dictionary * ini;
+	dictionary *ini;
 
 	// Did user specify a PSO parameter file?
 	if (argc >= 2)
@@ -263,7 +263,7 @@ static void parse_params(int argc, char * argv[], PSO_PARAMS * params) {
  * @return `EXIT_SUCCESS` if program executes successfully, `EXIT_FAILURE`
  * otherwise.
  */
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
 
 	/// PSO parameters, to be read from file
 	PSO_PARAMS params;

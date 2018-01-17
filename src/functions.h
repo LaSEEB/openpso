@@ -13,16 +13,16 @@
 #ifndef __FUNCTIONS_H_
 #define __FUNCTIONS_H_
 
-double Sphere(double * vars, unsigned int nvars);
-double Quadric(double * vars, unsigned int nvars);
-double Hyper(double * vars, unsigned int nvars);
-double Rastrigin(double * vars, unsigned int nvars);
-double Griewank(double * vars, unsigned int nvars);
-double Schaffer6(double * vars, unsigned int nvars);
-double Weierstrass(double * vars, unsigned int nvars);
-double Ackley(double * vars, unsigned int nvars);
-double ShiftedQuadricWithNoise(double * vars, unsigned int nvars);
-double RotatedGriewank(double * vars, unsigned int nvars);
-double Random01(double * vars, unsigned int nvars);
+double Sphere(double *vars, unsigned int nvars);
+double Quadric(double *vars, unsigned int nvars);
+double Hyper(double *vars, unsigned int nvars);
+double Rastrigin(double *vars, unsigned int nvars);
+double Griewank(double *vars, unsigned int nvars);
+double Schaffer6(double *vars, unsigned int nvars);
+double Weierstrass(double *vars, unsigned int nvars);
+double Ackley(double *vars, unsigned int nvars);
+double ShiftedQuadricWithNoise(double *vars, unsigned int nvars);
+double RotatedGriewank(double *vars, unsigned int nvars);
+double Random01(double *vars, unsigned int nvars);
 
 #endif

@@ -27,7 +27,7 @@
 #define HOOKS_INC 2
 
 /// If PSO terminates with error, error message will be placed here
-const char * pso_error = NULL;
+const char *pso_error = NULL;
 
 // Known neighborhoods
 
@@ -87,7 +87,7 @@ static uint32_t pso_mixseed(uint32_t seed, uint32_t tid) {
  * @param[in] params The PSO parameters to validate.
  * @return `NULL` if no error is found, or the error string otherwise.
  */
-static const char * pso_validate_params(PSO_PARAMS params) {
+static const char *pso_validate_params(PSO_PARAMS params) {
 
 	if (params.max_x < 1)
 		return "Invalid input parameter: max_x";
@@ -160,7 +160,7 @@ static const char * pso_validate_params(PSO_PARAMS params) {
  * @param[in] a Index of particle to update.
  * @param[in] iter Iteration count for current run.
  */
-static void pso_update_particle_pv(PSO * pso, int a, unsigned int iter) {
+static void pso_update_particle_pv(PSO *pso, int a, unsigned int iter) {
 
 	float v, x;
 	float pi, pg = 0.0;
@@ -244,7 +244,7 @@ static void pso_update_particle_pv(PSO * pso, int a, unsigned int iter) {
  *
  * @param[in,out] PSO model to initialize.
  */
-PSO * pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
+PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 
 	PSO * pso;
 	unsigned int z;
@@ -254,7 +254,7 @@ PSO * pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 	pso = (PSO *) calloc(1, sizeof(PSO));
 
 	// Validate parameters
-	const char * error = pso_validate_params(params);
+	const char *error = pso_validate_params(params);
 	if (error) {
 		pso_error = error;
 		ZF_LOGE("%s", error);
@@ -409,7 +409,7 @@ PSO * pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
  *
  * @param[in] PSO model to release.
  */
-void pso_destroy(PSO * pso) {
+void pso_destroy(PSO *pso) {
 
 	// Release PRNG states
 	free(pso->prng_states);
@@ -451,7 +451,7 @@ void pso_destroy(PSO * pso) {
  *
  * @param[in,out] PSO model to update.
  */
-void pso_update_pop_data(PSO * pso) {
+void pso_update_pop_data(PSO *pso) {
 
 	// Reset best and worst fitnesses
 	struct fit_id
@@ -559,7 +559,7 @@ void pso_update_pop_data(PSO * pso) {
  * @param[in] iter Iteration count for current run.
  * @param[in,out] pso PSO model containing particles to move.
  */
-void pso_update_particles(unsigned int iter, PSO * pso) {
+void pso_update_particles(unsigned int iter, PSO *pso) {
 
 	unsigned int evals = 0;
 
@@ -646,7 +646,7 @@ void pso_update_particles(unsigned int iter, PSO * pso) {
  *
  * @param[in,out] pso The PSO model object.
  */
-void pso_run(PSO * pso) {
+void pso_run(PSO *pso) {
 
 	// Aux. variables for current run
 	pso->iterations = 0;
@@ -696,7 +696,7 @@ void pso_run(PSO * pso) {
  * @param[in,out] pso The PSO model object.
  * @param[in] func The hook function to be called at the end of each iteration.
  */
-void pso_hook_add(PSO * pso, pso_func_hook func) {
+void pso_hook_add(PSO *pso, pso_func_hook func) {
 
 	// Do we have space for more hooks?
 	if (pso->n_hooks >= pso->alloc_hooks) {

@@ -98,7 +98,7 @@ typedef union {
  * In practice this function uses this entropy to seed the MRG32k3a PRNG
  * on-the-fly, and then calls MRG32k3a once.
  */
-double runif01(double * vars, unsigned int nvars) {
+double runif01(double *vars, unsigned int nvars) {
 
 	// Union variable used to mix seeds
 	flex seed, pseed;

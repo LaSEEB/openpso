@@ -16,16 +16,16 @@
 #include "mtwist.h"
 
 /// If PSO terminates with error, error message will be placed here
-extern const char * pso_error;
+extern const char *pso_error;
 
 /// PSO model
 typedef struct pso PSO;
 
 /// Functions optimized by PSO
-typedef double (* pso_func_opt)(double * vars, unsigned int nvars);
+typedef double (*pso_func_opt)(double *vars, unsigned int nvars);
 
 /// Hook functions
-typedef void (* pso_func_hook)(PSO * pso);
+typedef void (*pso_func_hook)(PSO *pso);
 
 // Structures
 
@@ -78,7 +78,7 @@ typedef struct {
 
 typedef struct {
 	unsigned int num_neighs;
-	const PSO_NEIGHBOR * neighs;
+	const PSO_NEIGHBOR *neighs;
 } PSO_NEIGHBORHOOD;
 
 typedef struct {
@@ -87,32 +87,32 @@ typedef struct {
 	double fitness;
 	double best_fitness_so_far;
 	double informants_best_fitness_so_far;
-	double * informants_best_position_so_far;
-	double * best_position_so_far;
-	double * position;
-	double * velocity;
+	double *informants_best_position_so_far;
+	double *best_position_so_far;
+	double *position;
+	double *velocity;
 } PSO_PARTICLE;
 
 struct pso {
 
 	PSO_PARAMS params;
-	mt_state * prng_states;
+	mt_state *prng_states;
 	unsigned int popSize;
 	unsigned int num_threads;
 	pso_func_opt evaluate;
 
 	unsigned int n_hooks;
 	unsigned int alloc_hooks;
-	pso_func_hook * hooks;
+	pso_func_hook *hooks;
 
 	/// Neighborhood used in PSO.
-	const PSO_NEIGHBORHOOD * neighbors;
+	const PSO_NEIGHBORHOOD *neighbors;
 
-	double * best_position;
-	double * best_position_so_far;
+	double *best_position;
+	double *best_position_so_far;
 
-	PSO_PARTICLE * particles;
-	unsigned int ** cell; // if ocupied, particle is the id, else, -1
+	PSO_PARTICLE *particles;
+	unsigned int **cell; // if ocupied, particle is the id, else, -1
 
 	unsigned int iterations;
 	unsigned int evaluations;
@@ -130,21 +130,21 @@ struct pso {
 };
 
 // Initialize PSO model.
-PSO * pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed);
+PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed);
 
 // Destroy PSO model.
-void pso_destroy(PSO * pso);
+void pso_destroy(PSO *pso);
 
 // Update population data.
-void pso_update_pop_data(PSO * pso);
+void pso_update_pop_data(PSO *pso);
 
 // Update position and velocity of all or some of the particles.
-void pso_update_particles(unsigned int iter, PSO * pso);
+void pso_update_particles(unsigned int iter, PSO *pso);
 
 // Run PSO algorithm
-void pso_run(PSO * pso);
+void pso_run(PSO *pso);
 
 // Add end-of-iteration hook.
-void pso_hook_add(PSO * pso, pso_func_hook func);
+void pso_hook_add(PSO *pso, pso_func_hook func);
 
 #endif
