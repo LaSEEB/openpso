@@ -29,24 +29,6 @@
 /// If PSO terminates with error, error message will be placed here
 const char *pso_error = NULL;
 
-// Known neighborhoods
-
-/// Moore neighborhood
-static const PSO_NEIGHBORHOOD neighbors_moore = {
-	.num_neighs = 9,
-	.neighs = (PSO_NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 1}, {1, 0},
-		{1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}}};
-
-/// Von Neumann neighborhood
-static const PSO_NEIGHBORHOOD neighbors_vn = {
-	.num_neighs = 5,
-	.neighs = (PSO_NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}};
-
-/// Ring neighborhood (requires max_y == 1)
-static const PSO_NEIGHBORHOOD neighbors_ring = {
-	.num_neighs = 3,
-	.neighs = (PSO_NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
-
 /// Variables with this structure will hold a fitness/particleID pair.
 struct fit_id { double fit; unsigned int id; };
 
@@ -269,21 +251,6 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 	// Keep the parameters and validate them
 	memmove(&pso->params, &params, sizeof(PSO_PARAMS));
 
-	// Setup neighbor mask
-	if (pso->params.neighborhood == 0) { // Moore
-		pso->neighbors = &neighbors_moore;
-	} else if (pso->params.neighborhood == 1) { // VN
-		pso->neighbors = &neighbors_vn;
-	} else if (pso->params.neighborhood == 2) { // Ring (requires max_y == 1)
-		pso->neighbors = &neighbors_ring;
-		if (params.max_y != 1) {
-			params.max_x = params.max_x * params.max_y;
-			params.max_y = 1;
-			ZF_LOGW("1D neighborhood selected, setting "
-				"max_x==%u and max_y==%u\n", params.max_x, params.max_y);
-		}
-	}
-
 	// Determine the number of threads
 	#ifdef _OPENMP
 		pso->num_threads = omp_get_max_threads();
@@ -298,7 +265,7 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 	}
 
 	// Keep population size
-	pso->popSize = pso->params.max_x * pso->params.max_y;
+	pso->popSize = pso->params.initPopSize;
 
 	// Keep function to evaluate
 	pso->evaluate = func;
@@ -394,10 +361,10 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 
 	// Initialize remaining PSO variables to their defaults
 	pso->best_so_far = pso->particles[0].fitness;
-	pso->best_so_far_id = 0;
+	pso->best_so_far_particle = &pso->particles[0];
 	pso->evaluations = 0;
 	pso->min_fitness = pso->particles[0].fitness;
-	pso->worst_id = 0;
+	pso->worst_particle = &pso->particles[0];
 
 	// Return initialized PSO model
 	return pso;
@@ -529,7 +496,7 @@ void pso_update_pop_data(PSO *pso) {
 
 	// Update global worst fitness
 	pso->worst_fitness = worst_fitness.fit;
-	pso->worst_id = worst_fitness.id;
+	pso->worst_particle = &pso->particles[worst_fitness.id];
 
 	// Update global best fitness/position for current iteration
 	pso->best_fitness = best_fitness.fit;
@@ -540,7 +507,7 @@ void pso_update_pop_data(PSO *pso) {
 	if (pso->best_so_far > best_fitness.fit) {
 
 		pso->best_so_far = best_fitness.fit;
-		pso->best_so_far_id = best_fitness.id;
+		pso->best_so_far_particle = &pso->particles[best_fitness.id];
 		memmove(pso->best_position_so_far,
 			pso->particles[best_fitness.id].position,
 			pso->params.nvars * sizeof(double));
@@ -568,50 +535,34 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 	#pragma omp parallel for reduction(+:evals) schedule(dynamic, 1)
 #endif
 	for (unsigned int a = 0; a < pso->popSize; ++a) {
+
 		// By default particle update is set to 0 (only relevant to SS-PSO)
 		int update = 0;
 
+		PSO_PARTICLE *currParticle = &pso->particles[a];
+		PSO_NEIGH_ITERATOR *iterator = pso->iterator(pso, currParticle);
+		PSO_PARTICLE *neighParticle = NULL;
+
 		// Cycle through neighbors
-		for (unsigned int n = 0; n < pso->neighbors->num_neighs; ++n) {
-
-			int i, j, ii, jj;
-			int neighParticle;
-
-			i = pso->particles[a].x + pso->neighbors->neighs[n].dx;
-			j = pso->particles[a].y + pso->neighbors->neighs[n].dy;
-
-			// Adjust neighbors location according to toroidal topology
-			ii = i;
-			jj = j;
-			if (i < 0)
-				ii = pso->params.max_x - 1;
-			if (i >= (int) pso->params.max_x)
-				ii = 0;
-			if (j < 0)
-				jj = pso->params.max_y - 1;
-			if (j >= (int) pso->params.max_y)
-				jj = 0;
-
-			// Get neighbor particle
-			neighParticle = pso->cell[ii][jj];
+		while ((neighParticle = pso->next(iterator)) != NULL) {
 
 			// If a neighbor particle is the worst particle...
-			if (neighParticle == pso->worst_id)
+			if (neighParticle == pso->worst_particle)
 				// ...mark current particle for updating (SS-PSO only)
 				update = 1;
 
 			// Does the neighbor know of better fitness than current
 			// particle?
-			if (pso->particles[neighParticle].best_fitness_so_far <
-					pso->particles[a].informants_best_fitness_so_far) {
+			if (neighParticle->best_fitness_so_far <
+					currParticle->informants_best_fitness_so_far) {
 
 				// If so, current particle will get that knowledge also
-				pso->particles[a].informants_best_fitness_so_far =
-					pso->particles[neighParticle].best_fitness_so_far;
+				currParticle->informants_best_fitness_so_far =
+					neighParticle->best_fitness_so_far;
 
 				memmove(
-					pso->particles[a].informants_best_position_so_far,
-					pso->particles[neighParticle].best_position_so_far,
+					currParticle->informants_best_position_so_far,
+					neighParticle->best_position_so_far,
 					pso->params.nvars * sizeof(double));
 			}
 

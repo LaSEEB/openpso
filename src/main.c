@@ -186,6 +186,9 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 
 	// The following parameters are related to the PSO model itself, and their
 	// validation is performed when creating the PSO model object, not here.
+	params->initPopSize = (unsigned int)
+		iniparser_getint(ini, "pso:init_pop_size", 0);
+
 	params->max_x = (unsigned int)
 		iniparser_getint(ini, "pso:max_x", 0);
 

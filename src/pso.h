@@ -21,6 +21,20 @@ extern const char *pso_error;
 /// PSO model
 typedef struct pso PSO;
 
+/// Forward declaration of PSO_PARTICLE
+typedef struct pso_particle PSO_PARTICLE;
+
+/// The PSO_NEIGH_ITERATOR can be anything, it is defined by the specific
+/// topology instance
+typedef void *PSO_NEIGH_ITERATOR;
+
+/// Function which returns a neighbor iterator, defined by the specific
+/// topology
+typedef PSO_NEIGH_ITERATOR *(*pso_neigh_iterator)(PSO *, PSO_PARTICLE *);
+
+/// Function which gets the next neighbor, defined by the specific topology
+typedef PSO_PARTICLE *(*pso_neigh_next)(PSO_NEIGH_ITERATOR *);
+
 /// Functions optimized by PSO
 typedef double (*pso_func_opt)(double *vars, unsigned int nvars);
 
@@ -32,6 +46,8 @@ typedef void (*pso_func_hook)(PSO *pso);
 /// PSO parameters
 typedef struct {
 
+	// Initial number of particles
+	unsigned int initPopSize;
 	//
 	unsigned int max_x, max_y;
 	//Maximum number of iterations
@@ -71,17 +87,7 @@ typedef struct {
 
 } PSO_PARAMS;
 
-typedef struct {
-	int dx;
-	int dy;
-} PSO_NEIGHBOR;
-
-typedef struct {
-	unsigned int num_neighs;
-	const PSO_NEIGHBOR *neighs;
-} PSO_NEIGHBORHOOD;
-
-typedef struct {
+struct pso_particle {
 	int x;
 	int y;
 	double fitness;
@@ -91,7 +97,7 @@ typedef struct {
 	double *best_position_so_far;
 	double *position;
 	double *velocity;
-} PSO_PARTICLE;
+};
 
 struct pso {
 
@@ -101,12 +107,12 @@ struct pso {
 	unsigned int num_threads;
 	pso_func_opt evaluate;
 
+	pso_neigh_iterator iterator;
+	pso_neigh_next next;
+
 	unsigned int n_hooks;
 	unsigned int alloc_hooks;
 	pso_func_hook *hooks;
-
-	/// Neighborhood used in PSO.
-	const PSO_NEIGHBORHOOD *neighbors;
 
 	double *best_position;
 	double *best_position_so_far;
@@ -123,9 +129,10 @@ struct pso {
 	double best_fitness;
 	double best_so_far;
 	double worst_fitness;
+
 	//double worst_so_far;
-	int best_so_far_id;
-	int worst_id;
+	PSO_PARTICLE *best_so_far_particle;
+	PSO_PARTICLE *worst_particle;
 	//int worst_so_far_id;
 };
 

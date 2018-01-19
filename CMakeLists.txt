@@ -36,7 +36,7 @@ include_directories(libs/mtwist libs/iniparser libs/zf_log)
 add_library(benchfuncs SHARED src/functions.c src/fprng.c)
 
 # Create standalone PSO library
-add_library(${PROJECT_NAME} SHARED src/pso.c
+add_library(${PROJECT_NAME} SHARED src/pso.c src/topology.c
 	libs/mtwist/mtwist.c libs/mtwist/randistrs.c libs/zf_log/zf_log.c)
 
 # Set executable name
@@ -44,6 +44,7 @@ set(PSO_EXE_NAME ${PROJECT_NAME}cli)
 
 # Create executable
 add_executable(${PSO_EXE_NAME} src/main.c src/pso.c src/functions.c src/fprng.c
+	src/topology.c
 	libs/mtwist/mtwist.c libs/mtwist/randistrs.c libs/iniparser/iniparser.c
 	libs/iniparser/dictionary.c libs/zf_log/zf_log.c)
 target_link_libraries(${PSO_EXE_NAME} m)
