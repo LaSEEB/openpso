@@ -17,12 +17,12 @@
 typedef struct {
 	int dx;
 	int dy;
-} PSO_NEIGHBOR;
+} PSO_SG2S_NEIGHBOR;
 
 typedef struct {
 	unsigned int num_neighs;
-	const PSO_NEIGHBOR *neighs;
-} PSO_NEIGHBORHOOD;
+	const PSO_SG2S_NEIGHBOR *neighs;
+} PSO_SG2S_NEIGHBORHOOD;
 
 typedef struct {
 	unsigned int xpos;
@@ -31,9 +31,9 @@ typedef struct {
 } PSO_SG2D_NEIGH_INFO;
 
 typedef struct {
-	const PSO_NEIGHBORHOOD *nhood;
+	const PSO_SG2S_NEIGHBORHOOD *nhood;
 	PSO_PARTICLE ***particles; // if not ocupied position set to NULL
-} PSO_GRID;
+} PSO_SG2S_TOPOL;
 
 static struct {
 	enum { MOORE, VON_NEUMANN, RING } neighborhood;
@@ -44,20 +44,20 @@ static struct {
 // Known neighborhoods
 
 /// Moore neighborhood
-static const PSO_NEIGHBORHOOD neighbors_moore = {
+static const PSO_SG2S_NEIGHBORHOOD neighbors_moore = {
 	.num_neighs = 9,
-	.neighs = (PSO_NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 1}, {1, 0},
+	.neighs = (PSO_SG2S_NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 1}, {1, 0},
 		{1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}}};
 
 /// Von Neumann neighborhood
-static const PSO_NEIGHBORHOOD neighbors_vn = {
+static const PSO_SG2S_NEIGHBORHOOD neighbors_vn = {
 	.num_neighs = 5,
-	.neighs = (PSO_NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}};
+	.neighs = (PSO_SG2S_NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 0}, {0, -1}, {-1, 0}}};
 
 /// Ring neighborhood (requires max_y == 1)
-static const PSO_NEIGHBORHOOD neighbors_ring = {
+static const PSO_SG2S_NEIGHBORHOOD neighbors_ring = {
 	.num_neighs = 3,
-	.neighs = (PSO_NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
+	.neighs = (PSO_SG2S_NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
 
 
 unsigned int pso_staticgrid2d_parse_params(dictionary *d) {
@@ -85,7 +85,7 @@ unsigned int pso_staticgrid2d_parse_params(dictionary *d) {
 ///////////// DURING PSO_NEW
 PSO_TOPOLOGY pso_staticgrid2d_new(PSO *pso) {
 
-	PSO_GRID *grid2d = malloc(sizeof(PSO_GRID));
+	PSO_SG2S_TOPOL *grid2d = malloc(sizeof(PSO_SG2S_TOPOL));
 
 	// Setup neighbor mask
 
@@ -135,7 +135,7 @@ PSO_TOPOLOGY pso_staticgrid2d_new(PSO *pso) {
 ///////////// DURING PSO_DESTROY
 void pso_staticgrid2d_destroy(PSO_TOPOLOGY topol) {
 
-	PSO_GRID *grid2d = (PSO_GRID *) topol;
+	PSO_SG2S_TOPOL *grid2d = (PSO_SG2S_TOPOL *) topol;
 
 	// Free cells
 	for (unsigned int x = 0; x < params.xdim; ++x) {
@@ -162,7 +162,7 @@ void pso_staticgrid2d_iterate(PSO_TOPOLOGY topol, PSO_PARTICLE *p) {
 /// Function which gets the next neighbor, defined by the specific topology
 PSO_PARTICLE *pso_staticgrid2d_next(PSO_TOPOLOGY topol, PSO_PARTICLE *p) {
 
-	PSO_GRID *grid2d = (PSO_GRID *) topol;
+	PSO_SG2S_TOPOL *grid2d = (PSO_SG2S_TOPOL *) topol;
 	PSO_SG2D_NEIGH_INFO *ninfo = (PSO_SG2D_NEIGH_INFO *) p->neigh_info;
 	PSO_PARTICLE *neighParticle = NULL;
 
