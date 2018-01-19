@@ -26,8 +26,14 @@ typedef struct {
 } PSO_NEIGHBORHOOD;
 
 typedef struct {
+	unsigned int xpos;
+	unsigned int ypos;
+	unsigned int iter;
+} PSO_SG2D_NEIGH_INFO;
+
+typedef struct {
 	const PSO_NEIGHBORHOOD *nhood;
-	unsigned int **cell; // if ocupied, particle is the id, else, -1
+	PSO_PARTICLE ***particles; // if not ocupied position set to NULL
 } PSO_GRID;
 
 static struct {
@@ -78,11 +84,9 @@ unsigned int pso_staticgrid2d_parse_params(dictionary *d) {
 }
 
 ///////////// DURING PSO_NEW
-void *pso_staticgrid2d_new() {
+PSO_TOPOLOGY pso_staticgrid2d_new(PSO *pso) {
 
-    PSO_GRID *grid2d = malloc(sizeof(PSO_GRID));
-
-	unsigned int z = 0;
+	PSO_GRID *grid2d = malloc(sizeof(PSO_GRID));
 
 	// Setup neighbor mask
 
@@ -101,54 +105,91 @@ void *pso_staticgrid2d_new() {
 	}
 
 	// Initialize cells
-	grid2d->cell =
-		(unsigned int **) calloc(params.xdim, sizeof(unsigned int *));
+	grid2d->particles = calloc(params.xdim, sizeof(PSO_PARTICLE **));
 
-	for (unsigned int i = 0; i < params.xdim; ++i) {
-		grid2d->cell[i] =
-			(unsigned int *) calloc(params.ydim, sizeof(unsigned int));
-		for (unsigned int j = 0; j < params.ydim; ++j) {
-			// Set cell as occupied (particle is the id)
-			grid2d->cell[i][j] = z;
-			// Increment id
-			z++;
+	for (unsigned int x = 0; x < params.xdim; ++x) {
+		grid2d->particles[x] = calloc(params.ydim, sizeof(PSO_PARTICLE *));
+		for (unsigned int y = 0; y < params.ydim; ++y) {
+
+			// Define neighbor information for this cell
+			PSO_SG2D_NEIGH_INFO *ninfo = malloc(sizeof(PSO_SG2D_NEIGH_INFO));
+			ninfo->xpos = x;
+			ninfo->ypos = y;
+			ninfo->iter = 0;
+
+			// Set cell as occupied
+			grid2d->particles[x][y] = &pso->particles[y * params.xdim + x];
+
+			// Keep neighbor info for this cell
+			grid2d->particles[x][y]->neigh_info	= ninfo;
 		}
 	}
+
+	// Setup neighbor iterator functions
+	pso->iterate = pso_grid2d_iterate;
+	pso->next = pso_grid2d_next;
 
 	return (void *) grid2d;
 }
 
 
 ///////////// DURING PSO_DESTROY
+void pso_staticgrid2d_destroy(PSO_TOPOLOGY topol) {
 
-/*
-// Free cells
-for (unsigned int i = 0; i < pso->params.max_y; ++i) {
-	free(pso->cell[i]);
+	PSO_GRID *grid2d = (PSO_GRID *) topol;
+
+	// Free cells
+	for (unsigned int x = 0; x < params.xdim; ++x) {
+		for (unsigned int y = 0; y < params.ydim; ++y) {
+			free(grid2d->particles[x][y]->neigh_info);
+		}
+		free(grid2d->particles[x]);
+	}
+	free(grid2d->particles);
 }
-free(pso->cell);
-*/
 
-//////////// DURING PARTICLE UPDATE
-/*
-int i, j, ii, jj;
-int neighParticle;
+/// Function which restarts a neighbor iterator, defined by the specific
+/// topology
+void pso_grid2d_iterate(PSO_TOPOLOGY topol, PSO_PARTICLE *p) {
 
-i = pso->particles[a].x + pso->neighbors->neighs[n].dx;
-j = pso->particles[a].y + pso->neighbors->neighs[n].dy;
+	// Unused parameter
+	(void)(topol);
 
-// Adjust neighbors location according to toroidal topology
-ii = i;
-jj = j;
-if (i < 0)
-	ii = pso->params.max_x - 1;
-if (i >= (int) pso->params.max_x)
-	ii = 0;
-if (j < 0)
-	jj = pso->params.max_y - 1;
-if (j >= (int) pso->params.max_y)
-	jj = 0;
+	// Reset neighbor iterator for this particle
+	PSO_SG2D_NEIGH_INFO *ninfo = (PSO_SG2D_NEIGH_INFO *) p->neigh_info;
+	ninfo->iter = 0;
+}
 
-// Get neighbor particle
-neighParticle = pso->cell[ii][jj];
-*/
+/// Function which gets the next neighbor, defined by the specific topology
+PSO_PARTICLE *pso_grid2d_next(PSO_TOPOLOGY topol, PSO_PARTICLE *p) {
+
+	PSO_GRID *grid2d = (PSO_GRID *) topol;
+	PSO_SG2D_NEIGH_INFO *ninfo = (PSO_SG2D_NEIGH_INFO *) p->neigh_info;
+	PSO_PARTICLE *neighParticle = NULL;
+
+	int i, j, ii, jj;
+
+	if (ninfo->iter < grid2d->nhood->num_neighs) {
+		i = ninfo->xpos + grid2d->nhood->neighs[ninfo->iter].dx;
+		j = ninfo->ypos + grid2d->nhood->neighs[ninfo->iter].dy;
+
+		ninfo->iter++;
+
+		// Adjust neighbors location according to toroidal topology
+		ii = i;
+		jj = j;
+		if (i < 0)
+			ii = params.xdim - 1;
+		if (i >= (int) params.xdim)
+			ii = 0;
+		if (j < 0)
+			jj = params.ydim - 1;
+		if (j >= (int) params.ydim)
+			jj = 0;
+
+		// Get neighbor particle
+		neighParticle = grid2d->particles[ii][jj];
+	}
+
+	return neighParticle;
+}

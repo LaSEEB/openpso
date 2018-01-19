@@ -25,6 +25,7 @@
 #include "functions.h"
 #include "pso.h"
 #include "errorhandling.h"
+#include "staticgrid2d.c"
 
 // Constants
 
@@ -172,6 +173,9 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 	if (!ini) ERROR_EXIT("Unable to parse input file '%s'", input_file);
 
 	// Read PSO parameters file
+
+	// Read topology related parameters
+	params->initPopSize = pso_staticgrid2d_parse_params(ini);
 
 	// The following parameters are related to the PSO model itself, and their
 	// validation is performed when creating the PSO model object, not here.

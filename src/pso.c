@@ -21,6 +21,7 @@
 #include "pso.h"
 #include "randistrs.h"
 #include "zf_log.h"
+#include "staticgrid2d.h"
 
 // When hooks array is full/not initialized, by how much should we increment
 // the hooks array capacity?
@@ -71,11 +72,9 @@ static uint32_t pso_mixseed(uint32_t seed, uint32_t tid) {
  */
 static const char *pso_validate_params(PSO_PARAMS params) {
 
-	if (params.max_x < 1)
-		return "Invalid input parameter: max_x";
-
-	if (params.max_y < 1)
-		return "Invalid input parameter: max_y";
+	// TODO Maybe initPopSize validation should be elsewhere?
+	if (params.initPopSize < 1)
+		return "Invalid initial population size";
 
 	if (params.max_t < 1)
 		return "Invalid input parameter: max_t";
@@ -88,10 +87,6 @@ static const char *pso_validate_params(PSO_PARAMS params) {
 
 	if ((params.gbest < 0) || (params.gbest > 1))
 		return "Invalid input parameter: gbest";
-
-	if (params.neighborhood > 2) { // Moore
-		return "Invalid input parameter: neighborhood";
-	}
 
 	if (params.Xmax < -DBL_MAX + 0.1) //FIXME
 		return "Invalid input parameter: Xmax";
@@ -228,7 +223,7 @@ static void pso_update_particle_pv(PSO *pso, int a, unsigned int iter) {
  */
 PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 
-	PSO * pso;
+	PSO *pso = NULL;
 	float xmin, xmax;
 
 	// Allocate memory for PSO
@@ -289,6 +284,9 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 			(double *) calloc(pso->params.nvars, sizeof(double));
 	}
 
+
+	// Initialize topology ONLY AFTER particles are initialized
+	pso->topol = pso_staticgrid2d_new(pso);
 
 	// Set initial position bounds
 	if (pso->params.assyInitialization == 1) {
@@ -515,11 +513,12 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 		int update = 0;
 
 		PSO_PARTICLE *currParticle = &pso->particles[a];
-		PSO_NEIGH_ITERATOR *iterator = pso->iterator(pso, currParticle);
 		PSO_PARTICLE *neighParticle = NULL;
 
+		pso->iterate(pso->topol, currParticle);
+
 		// Cycle through neighbors
-		while ((neighParticle = pso->next(iterator)) != NULL) {
+		while ((neighParticle = pso->next(pso->topol, currParticle)) != NULL) {
 
 			// If a neighbor particle is the worst particle...
 			if (neighParticle == pso->worst_particle)

@@ -15,17 +15,15 @@
 
 #include "pso.h"
 
-// TODO: Below stuff should go to specific grid2d topology plugin
-/*
-typedef struct {
-	int dx;
-	int dy;
-} PSO_NEIGHBOR;
+PSO_TOPOLOGY pso_staticgrid2d_new(PSO *);
+void pso_staticgrid2d_destroy(PSO_TOPOLOGY);
 
-typedef struct {
-	unsigned int num_neighs;
-	const PSO_NEIGHBOR *neighs;
-} PSO_NEIGHBORHOOD;
-*/
+/// Function which restarts a neighbor iterator, defined by the specific
+/// topology
+void pso_grid2d_iterate(PSO_TOPOLOGY, PSO_PARTICLE *);
+
+/// Function which gets the next neighbor, defined by the specific topology
+PSO_PARTICLE *pso_grid2d_next(PSO_TOPOLOGY, PSO_PARTICLE *);
+
 
 #endif

@@ -24,16 +24,15 @@ typedef struct pso PSO;
 /// Forward declaration of PSO_PARTICLE
 typedef struct pso_particle PSO_PARTICLE;
 
-/// The PSO_NEIGH_ITERATOR can be anything, it is defined by the specific
-/// topology instance
-typedef void *PSO_NEIGH_ITERATOR;
+/// A PSO topology, can be anything
+typedef void *PSO_TOPOLOGY;
 
-/// Function which returns a neighbor iterator, defined by the specific
+/// Function which restarts a neighbor iterator, defined by the specific
 /// topology
-typedef PSO_NEIGH_ITERATOR *(*pso_neigh_iterator)(PSO *, PSO_PARTICLE *);
+typedef void (*pso_neigh_iterate)(PSO_TOPOLOGY, PSO_PARTICLE *);
 
 /// Function which gets the next neighbor, defined by the specific topology
-typedef PSO_PARTICLE *(*pso_neigh_next)(PSO_NEIGH_ITERATOR *);
+typedef PSO_PARTICLE *(*pso_neigh_next)(PSO_TOPOLOGY, PSO_PARTICLE *);
 
 /// Functions optimized by PSO
 typedef double (*pso_func_opt)(double *vars, unsigned int nvars);
@@ -90,6 +89,8 @@ typedef struct {
 struct pso_particle {
 	//int x;
 	//int y;
+	void *neigh_info;
+
 	double fitness;
 	double best_fitness_so_far;
 	double informants_best_fitness_so_far;
@@ -107,7 +108,8 @@ struct pso {
 	unsigned int num_threads;
 	pso_func_opt evaluate;
 
-	pso_neigh_iterator iterator;
+	PSO_TOPOLOGY topol;
+	pso_neigh_iterate iterate;
 	pso_neigh_next next;
 
 	unsigned int n_hooks;
