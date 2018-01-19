@@ -11,11 +11,34 @@
  */
 
 #include "staticgrid2d.h"
+#include "iniparser.h"
+#include "errorhandling.h"
+#include "zf_log.h"
+
+typedef struct {
+	int dx;
+	int dy;
+} PSO_NEIGHBOR;
+
+typedef struct {
+	unsigned int num_neighs;
+	const PSO_NEIGHBOR *neighs;
+} PSO_NEIGHBORHOOD;
+
+typedef struct {
+	const PSO_NEIGHBORHOOD *nhood;
+	unsigned int **cell; // if ocupied, particle is the id, else, -1
+} PSO_GRID;
+
+static struct {
+	enum { MOORE, VON_NEUMANN, RING } neighborhood;
+	unsigned int xdim;
+	unsigned int ydim;
+} params;
 
 // Known neighborhoods
 
 /// Moore neighborhood
-/*
 static const PSO_NEIGHBORHOOD neighbors_moore = {
 	.num_neighs = 9,
 	.neighs = (PSO_NEIGHBOR[]) {{0, 0}, {0, 1}, {1, 1}, {1, 0},
@@ -30,53 +53,71 @@ static const PSO_NEIGHBORHOOD neighbors_vn = {
 static const PSO_NEIGHBORHOOD neighbors_ring = {
 	.num_neighs = 3,
 	.neighs = (PSO_NEIGHBOR[]) {{-1, 0}, {0, 0}, {1, 0}}};
-*/
 
-/////////// PREVIOUSLY IN PSO.H, PSO object
 
-unsigned int **cell; // if ocupied, particle is the id, else, -1
+unsigned int pso_staticgrid2d_parse_params(dictionary *d) {
+
+	const char *neighborhood =
+		iniparser_getstring(d, "topology:neighborhood", "Moore");
+
+	if (strcmp(neighborhood, "MOORE") == 0) {
+		params.neighborhood = MOORE;
+	} else if (strcmp(neighborhood, "VN") == 0) {
+		params.neighborhood = VON_NEUMANN;
+	} else {
+		ERROR_EXIT("Unknown Grid2D neighborhood: '%s'", neighborhood);
+	}
+
+	params.xdim = (unsigned int)
+			iniparser_getint(d, "topology:xdim", 0);
+
+	params.ydim = (unsigned int)
+			iniparser_getint(d, "topology:ydim", 0);
+
+	return params.xdim * params.ydim;
+}
 
 ///////////// DURING PSO_NEW
+void *pso_staticgrid2d_new() {
 
+    PSO_GRID *grid2d = malloc(sizeof(PSO_GRID));
 
-unsigned int z;
+	unsigned int z = 0;
 
-// Setup neighbor mask
-/*
-if (pso->params.neighborhood == 0) { // Moore
-	pso->neighbors = &neighbors_moore;
-} else if (pso->params.neighborhood == 1) { // VN
-	pso->neighbors = &neighbors_vn;
-} else if (pso->params.neighborhood == 2) { // Ring (requires max_y == 1)
-	pso->neighbors = &neighbors_ring;
-	if (params.max_y != 1) {
-		params.max_x = params.max_x * params.max_y;
-		params.max_y = 1;
-		ZF_LOGW("1D neighborhood selected, setting "
-			"max_x==%u and max_y==%u\n", params.max_x, params.max_y);
+	// Setup neighbor mask
+
+	if (params.neighborhood == MOORE) { // Moore
+		grid2d->nhood = &neighbors_moore;
+	} else if (params.neighborhood == VON_NEUMANN) { // VN
+		grid2d->nhood = &neighbors_vn;
+	} else if (params.neighborhood == RING) { // Ring (requires max_y == 1)
+		grid2d->nhood = &neighbors_ring;
+		if (params.ydim != 1) {
+			params.xdim = params.xdim * params.ydim;
+			params.ydim = 1;
+			ZF_LOGW("1D neighborhood selected, setting "
+				"xdim==%u and ydim==%u\n", params.xdim, params.ydim);
+		}
 	}
+
+	// Initialize cells
+	grid2d->cell =
+		(unsigned int **) calloc(params.xdim, sizeof(unsigned int *));
+
+	for (unsigned int i = 0; i < params.xdim; ++i) {
+		grid2d->cell[i] =
+			(unsigned int *) calloc(params.ydim, sizeof(unsigned int));
+		for (unsigned int j = 0; j < params.ydim; ++j) {
+			// Set cell as occupied (particle is the id)
+			grid2d->cell[i][j] = z;
+			// Increment id
+			z++;
+		}
+	}
+
+	return (void *) grid2d;
 }
 
-
-// Initialize cells
-pso->cell =
-	(unsigned int **) calloc(pso->params.max_x, sizeof(unsigned int *));
-
-z = 0;
-for (unsigned int i = 0; i < pso->params.max_x; ++i) {
-	pso->cell[i] =
-		(unsigned int *) calloc(pso->params.max_y, sizeof(unsigned int));
-	for (unsigned int j = 0; j < pso->params.max_y; ++j) {
-		// Set cell as occupied (particle is the id)
-		pso->cell[i][j] = z;
-		// Set particle default position
-		pso->particles[z].x = i;
-		pso->particles[z].y = j;
-		// Increment id
-		z++;
-	}
-}
-*/
 
 ///////////// DURING PSO_DESTROY
 

@@ -88,8 +88,8 @@ typedef struct {
 } PSO_PARAMS;
 
 struct pso_particle {
-	int x;
-	int y;
+	//int x;
+	//int y;
 	double fitness;
 	double best_fitness_so_far;
 	double informants_best_fitness_so_far;

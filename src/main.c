@@ -24,6 +24,7 @@
 #include "iniparser.h"
 #include "functions.h"
 #include "pso.h"
+#include "errorhandling.h"
 
 // Constants
 
@@ -45,18 +46,6 @@
 #define FILE_FITNESS "FINAL.DAT"
 
 // Useful macros
-
-/**
- * Macro for terminating program with error condition.
- *
- * @param[in] err_msg Error message.
- * @param[in] ... Message parameters.
- */
-#define ERROR_EXIT(err_msg, ...) \
-	do { \
-		fprintf(stderr, err_msg "\n", __VA_ARGS__); \
-		exit(EXIT_FAILURE); \
-	} while (0)
 
 /**
  * Macro for calculating median. Assumes sorted vector.
@@ -186,15 +175,6 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 
 	// The following parameters are related to the PSO model itself, and their
 	// validation is performed when creating the PSO model object, not here.
-	params->initPopSize = (unsigned int)
-		iniparser_getint(ini, "pso:init_pop_size", 0);
-
-	params->max_x = (unsigned int)
-		iniparser_getint(ini, "pso:max_x", 0);
-
-	params->max_y = (unsigned int)
-		iniparser_getint(ini, "pso:max_y", 0);
-
 	params->max_t = (unsigned int)
 		iniparser_getint(ini, "pso:max_t", 0);
 
@@ -205,9 +185,6 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 		iniparser_getint(ini, "pso:algorithm", 0);
 
 	params->gbest = iniparser_getboolean(ini, "pso:gbest", -1);
-
-	params->neighborhood = (unsigned int)
-		iniparser_getint(ini, "pso:neighborhood", 3);
 
 	params->Xmax = iniparser_getdouble(ini, "pso:xmax", -DBL_MAX);
 
