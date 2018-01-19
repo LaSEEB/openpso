@@ -287,6 +287,8 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 
 	// Initialize topology ONLY AFTER particles are initialized
 	pso->topol = pso_staticgrid2d_new(pso);
+	pso->iterate = pso_staticgrid2d_iterate;
+	pso->next = pso_staticgrid2d_next;
 
 	// Set initial position bounds
 	if (pso->params.assyInitialization == 1) {
@@ -367,6 +369,9 @@ void pso_destroy(PSO *pso) {
 		free(pso->particles[i].position);
 		free(pso->particles[i].velocity);
 	}
+
+	// Release topology BEFORE releasing particles
+	pso_staticgrid2d_destroy(pso->topol);
 
 	// Release particle vector
 	free(pso->particles);

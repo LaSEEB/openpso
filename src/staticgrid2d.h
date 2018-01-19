@@ -14,16 +14,19 @@
 #define __PSO_TOPOLOGY_H_
 
 #include "pso.h"
+#include "iniparser.h"
+
+unsigned int pso_staticgrid2d_parse_params(dictionary *d);
 
 PSO_TOPOLOGY pso_staticgrid2d_new(PSO *);
 void pso_staticgrid2d_destroy(PSO_TOPOLOGY);
 
 /// Function which restarts a neighbor iterator, defined by the specific
 /// topology
-void pso_grid2d_iterate(PSO_TOPOLOGY, PSO_PARTICLE *);
+void pso_staticgrid2d_iterate(PSO_TOPOLOGY, PSO_PARTICLE *);
 
 /// Function which gets the next neighbor, defined by the specific topology
-PSO_PARTICLE *pso_grid2d_next(PSO_TOPOLOGY, PSO_PARTICLE *);
+PSO_PARTICLE *pso_staticgrid2d_next(PSO_TOPOLOGY, PSO_PARTICLE *);
 
 
 #endif

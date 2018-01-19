@@ -11,7 +11,6 @@
  */
 
 #include "staticgrid2d.h"
-#include "iniparser.h"
 #include "errorhandling.h"
 #include "zf_log.h"
 
@@ -126,8 +125,8 @@ PSO_TOPOLOGY pso_staticgrid2d_new(PSO *pso) {
 	}
 
 	// Setup neighbor iterator functions
-	pso->iterate = pso_grid2d_iterate;
-	pso->next = pso_grid2d_next;
+	pso->iterate = pso_staticgrid2d_iterate;
+	pso->next = pso_staticgrid2d_next;
 
 	return (void *) grid2d;
 }
@@ -150,7 +149,7 @@ void pso_staticgrid2d_destroy(PSO_TOPOLOGY topol) {
 
 /// Function which restarts a neighbor iterator, defined by the specific
 /// topology
-void pso_grid2d_iterate(PSO_TOPOLOGY topol, PSO_PARTICLE *p) {
+void pso_staticgrid2d_iterate(PSO_TOPOLOGY topol, PSO_PARTICLE *p) {
 
 	// Unused parameter
 	(void)(topol);
@@ -161,7 +160,7 @@ void pso_grid2d_iterate(PSO_TOPOLOGY topol, PSO_PARTICLE *p) {
 }
 
 /// Function which gets the next neighbor, defined by the specific topology
-PSO_PARTICLE *pso_grid2d_next(PSO_TOPOLOGY topol, PSO_PARTICLE *p) {
+PSO_PARTICLE *pso_staticgrid2d_next(PSO_TOPOLOGY topol, PSO_PARTICLE *p) {
 
 	PSO_GRID *grid2d = (PSO_GRID *) topol;
 	PSO_SG2D_NEIGH_INFO *ninfo = (PSO_SG2D_NEIGH_INFO *) p->neigh_info;

@@ -25,7 +25,7 @@
 #include "functions.h"
 #include "pso.h"
 #include "errorhandling.h"
-#include "staticgrid2d.c"
+#include "staticgrid2d.h"
 
 // Constants
 
