@@ -16,7 +16,7 @@
 #include "pso.h"
 
 // TODO: Below stuff should go to specific grid2d topology plugin
-
+/*
 typedef struct {
 	int dx;
 	int dy;
@@ -26,5 +26,6 @@ typedef struct {
 	unsigned int num_neighs;
 	const PSO_NEIGHBOR *neighs;
 } PSO_NEIGHBORHOOD;
+*/
 
 #endif

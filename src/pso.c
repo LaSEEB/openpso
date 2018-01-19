@@ -229,7 +229,6 @@ static void pso_update_particle_pv(PSO *pso, int a, unsigned int iter) {
 PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 
 	PSO * pso;
-	unsigned int z;
 	float xmin, xmax;
 
 	// Allocate memory for PSO
@@ -265,7 +264,7 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 	}
 
 	// Keep population size
-	pso->popSize = pso->params.initPopSize;
+	pso->pop_size = pso->params.initPopSize;
 
 	// Keep function to evaluate
 	pso->evaluate = func;
@@ -276,10 +275,10 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 
 	// Initialize particles vector
 	pso->particles =
-		(PSO_PARTICLE *) calloc(pso->popSize, sizeof(PSO_PARTICLE));
+		(PSO_PARTICLE *) calloc(pso->pop_size, sizeof(PSO_PARTICLE));
 
 	// Initialize individual particles
-	for (unsigned int i = 0; i < pso->popSize; ++i) {
+	for (unsigned int i = 0; i < pso->pop_size; ++i) {
 		pso->particles[i].informants_best_position_so_far =
 			(double *) calloc(pso->params.nvars, sizeof(double));
 		pso->particles[i].best_position_so_far =
@@ -290,24 +289,6 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 			(double *) calloc(pso->params.nvars, sizeof(double));
 	}
 
-	// Initialize cells
-	pso->cell =
-		(unsigned int **) calloc(pso->params.max_x, sizeof(unsigned int *));
-
-	z = 0;
-	for (unsigned int i = 0; i < pso->params.max_x; ++i) {
-		pso->cell[i] =
-			(unsigned int *) calloc(pso->params.max_y, sizeof(unsigned int));
-		for (unsigned int j = 0; j < pso->params.max_y; ++j) {
-			// Set cell as occupied (particle is the id)
-			pso->cell[i][j] = z;
-			// Set particle default position
-			pso->particles[z].x = i;
-			pso->particles[z].y = j;
-			// Increment id
-			z++;
-		}
-	}
 
 	// Set initial position bounds
 	if (pso->params.assyInitialization == 1) {
@@ -321,7 +302,7 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 	}
 
 	//Initialize position and velocity of each particle
-	for (unsigned int i = 0; i < pso->popSize; ++i) {
+	for (unsigned int i = 0; i < pso->pop_size; ++i) {
 
 		// Initialize position and velocity for each variable of the current
 		// particle
@@ -382,7 +363,7 @@ void pso_destroy(PSO *pso) {
 	free(pso->prng_states);
 
 	// Release individual particles
-	for (unsigned int i = 0; i < pso->popSize; ++i) {
+	for (unsigned int i = 0; i < pso->pop_size; ++i) {
 		free(pso->particles[i].informants_best_position_so_far);
 		free(pso->particles[i].best_position_so_far);
 		free(pso->particles[i].position);
@@ -391,12 +372,6 @@ void pso_destroy(PSO *pso) {
 
 	// Release particle vector
 	free(pso->particles);
-
-	// Free cells
-	for (unsigned int i = 0; i < pso->params.max_y; ++i) {
-		free(pso->cell[i]);
-	}
-	free(pso->cell);
 
 	// Release best position vectors
 	free(pso->best_position_so_far);
@@ -448,7 +423,7 @@ void pso_update_pop_data(PSO *pso) {
 #endif */
 
 	// Cycle through particles
-	for (unsigned int i = 0; i < pso->popSize; ++i) {
+	for (unsigned int i = 0; i < pso->pop_size; ++i) {
 
 		// Updates worst in population
 		if (pso->particles[i].fitness > worst_fitness.fit) {
@@ -514,7 +489,7 @@ void pso_update_pop_data(PSO *pso) {
 	}
 
 	// Determine average fitness in the population
-	pso->average_fitness = sum_fitness / pso->popSize;
+	pso->average_fitness = sum_fitness / pso->pop_size;
 }
 
 /**
@@ -534,7 +509,7 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 #ifdef _OPENMP
 	#pragma omp parallel for reduction(+:evals) schedule(dynamic, 1)
 #endif
-	for (unsigned int a = 0; a < pso->popSize; ++a) {
+	for (unsigned int a = 0; a < pso->pop_size; ++a) {
 
 		// By default particle update is set to 0 (only relevant to SS-PSO)
 		int update = 0;

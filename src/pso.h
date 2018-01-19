@@ -103,7 +103,7 @@ struct pso {
 
 	PSO_PARAMS params;
 	mt_state *prng_states;
-	unsigned int popSize;
+	unsigned int pop_size;
 	unsigned int num_threads;
 	pso_func_opt evaluate;
 
@@ -118,7 +118,6 @@ struct pso {
 	double *best_position_so_far;
 
 	PSO_PARTICLE *particles;
-	unsigned int **cell; // if ocupied, particle is the id, else, -1
 
 	unsigned int iterations;
 	unsigned int evaluations;
