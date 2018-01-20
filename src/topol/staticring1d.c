@@ -11,7 +11,7 @@
  */
 
 #include "staticring1d.h"
-#include "errorhandling.h"
+#include "../errorhandling.h"
 #include "zf_log.h"
 
 typedef struct {

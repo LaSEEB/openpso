@@ -21,7 +21,6 @@
 #include "pso.h"
 #include "randistrs.h"
 #include "zf_log.h"
-#include "staticgrid2d.h"
 
 // When hooks array is full/not initialized, by how much should we increment
 // the hooks array capacity?
@@ -360,6 +359,9 @@ void pso_destroy(PSO *pso) {
 	// Release PRNG states
 	free(pso->prng_states);
 
+	// Release topology BEFORE releasing particles
+	pso->params.topol.destroy(pso->topol);
+
 	// Release individual particles
 	for (unsigned int i = 0; i < pso->pop_size; ++i) {
 		free(pso->particles[i].informants_best_position_so_far);
@@ -367,9 +369,6 @@ void pso_destroy(PSO *pso) {
 		free(pso->particles[i].position);
 		free(pso->particles[i].velocity);
 	}
-
-	// Release topology BEFORE releasing particles
-	pso_staticgrid2d_destroy(pso->topol);
 
 	// Release particle vector
 	free(pso->particles);

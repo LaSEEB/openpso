@@ -25,8 +25,8 @@
 #include "functions.h"
 #include "pso.h"
 #include "errorhandling.h"
-#include "staticgrid2d.h"
-#include "staticring1d.h"
+#include "topol/staticgrid2d.h"
+#include "topol/staticring1d.h"
 
 // Constants
 
