@@ -10,23 +10,23 @@
  * @author Nuno Fachada
  */
 
-#ifndef __PSO_STATICGRID2D_H_
-#define __PSO_STATICGRID2D_H_
+#ifndef __PSO_STATICRING1D_H_
+#define __PSO_STATICRING1D_H_
 
 #include "pso.h"
 #include "iniparser.h"
 
-unsigned int pso_staticgrid2d_parse_params(dictionary *d);
+unsigned int pso_staticring1d_parse_params(dictionary *d);
 
-PSO_TOPOLOGY pso_staticgrid2d_new(PSO *);
-void pso_staticgrid2d_destroy(PSO_TOPOLOGY);
+PSO_TOPOLOGY pso_staticring1d_new(PSO *);
+void pso_staticring1d_destroy(PSO_TOPOLOGY);
 
 /// Function which restarts a neighbor iterator, defined by the specific
 /// topology
-void pso_staticgrid2d_iterate(PSO_TOPOLOGY, PSO_PARTICLE *);
+void pso_staticring1d_iterate(PSO_TOPOLOGY, PSO_PARTICLE *);
 
 /// Function which gets the next neighbor, defined by the specific topology
-PSO_PARTICLE *pso_staticgrid2d_next(PSO_TOPOLOGY, PSO_PARTICLE *);
+PSO_PARTICLE *pso_staticring1d_next(PSO_TOPOLOGY, PSO_PARTICLE *);
 
 
 #endif

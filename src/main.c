@@ -26,6 +26,7 @@
 #include "pso.h"
 #include "errorhandling.h"
 #include "staticgrid2d.h"
+#include "staticring1d.h"
 
 // Constants
 
@@ -149,6 +150,9 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 	// INI object
 	dictionary *ini;
 
+	// Topology type
+	const char *topol;
+
 	// Did user specify a PSO parameter file?
 	if (argc >= 2)
 		strncpy(input_file, argv[1], FILE_MAX_LEN);
@@ -175,7 +179,26 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 	// Read PSO parameters file
 
 	// Read topology related parameters
-	params->initPopSize = pso_staticgrid2d_parse_params(ini);
+
+	// Determine topology
+	topol = iniparser_getstring(ini, "topology:type", NULL);
+	if (topol == NULL) {
+		ERROR_EXIT("Topology type not defined in '%s'.", input_file);
+	} else if (strcmp(topol, "staticgrid2d") == 0) {
+		params->initPopSize = pso_staticgrid2d_parse_params(ini);
+		params->topol.new = pso_staticgrid2d_new;
+		params->topol.destroy = pso_staticgrid2d_destroy;
+		params->topol.iterate = pso_staticgrid2d_iterate;
+		params->topol.next = pso_staticgrid2d_next;
+	} else if (strcmp(topol, "staticring1d") == 0) {
+		params->initPopSize = pso_staticring1d_parse_params(ini);
+		params->topol.new = pso_staticring1d_new;
+		params->topol.destroy = pso_staticring1d_destroy;
+		params->topol.iterate = pso_staticring1d_iterate;
+		params->topol.next = pso_staticring1d_next;
+	} else {
+		ERROR_EXIT("Unknown topology '%s'", topol);
+	}
 
 	// The following parameters are related to the PSO model itself, and their
 	// validation is performed when creating the PSO model object, not here.

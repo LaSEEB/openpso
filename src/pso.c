@@ -286,9 +286,7 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 
 
 	// Initialize topology ONLY AFTER particles are initialized
-	pso->topol = pso_staticgrid2d_new(pso);
-	pso->iterate = pso_staticgrid2d_iterate;
-	pso->next = pso_staticgrid2d_next;
+	pso->topol = pso->params.topol.new(pso);
 
 	// Set initial position bounds
 	if (pso->params.assyInitialization == 1) {
@@ -520,10 +518,11 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 		PSO_PARTICLE *currParticle = &pso->particles[a];
 		PSO_PARTICLE *neighParticle = NULL;
 
-		pso->iterate(pso->topol, currParticle);
+		pso->params.topol.iterate(pso->topol, currParticle);
 
 		// Cycle through neighbors
-		while ((neighParticle = pso->next(pso->topol, currParticle)) != NULL) {
+		while ((neighParticle =
+			pso->params.topol.next(pso->topol, currParticle)) != NULL) {
 
 			// If a neighbor particle is the worst particle...
 			if (neighParticle == pso->worst_particle)

@@ -27,12 +27,15 @@ typedef struct pso_particle PSO_PARTICLE;
 /// A PSO topology, can be anything
 typedef void *PSO_TOPOLOGY;
 
+typedef PSO_TOPOLOGY (*pso_topol_new)(PSO *);
+typedef void (*pso_topol_destroy)(PSO_TOPOLOGY);
+
 /// Function which restarts a neighbor iterator, defined by the specific
 /// topology
-typedef void (*pso_neigh_iterate)(PSO_TOPOLOGY, PSO_PARTICLE *);
+typedef void (*pso_topol_iterate)(PSO_TOPOLOGY, PSO_PARTICLE *);
 
 /// Function which gets the next neighbor, defined by the specific topology
-typedef PSO_PARTICLE *(*pso_neigh_next)(PSO_TOPOLOGY, PSO_PARTICLE *);
+typedef PSO_PARTICLE *(*pso_topol_next)(PSO_TOPOLOGY, PSO_PARTICLE *);
 
 /// Functions optimized by PSO
 typedef double (*pso_func_opt)(double *vars, unsigned int nvars);
@@ -47,8 +50,15 @@ typedef struct {
 
 	// Initial number of particles
 	unsigned int initPopSize;
-	//
-	unsigned int max_x, max_y;
+
+	// Topology parameters
+	struct {
+		pso_topol_new new;
+		pso_topol_destroy destroy;
+		pso_topol_iterate iterate;
+		pso_topol_next next;
+	} topol;
+
 	//Maximum number of iterations
 	unsigned int max_t;
 	// Maximum number of evaluations
@@ -109,8 +119,6 @@ struct pso {
 	pso_func_opt evaluate;
 
 	PSO_TOPOLOGY topol;
-	pso_neigh_iterate iterate;
-	pso_neigh_next next;
 
 	unsigned int n_hooks;
 	unsigned int alloc_hooks;
