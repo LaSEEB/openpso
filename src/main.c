@@ -207,6 +207,10 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 		ERROR_EXIT("Unknown topology '%s'", topol);
 	}
 
+	if (params->initPopSize < 1) {
+		ERROR_EXIT("Invalid initial population size%s", "");
+	}
+
 	// The following parameters are related to the PSO model itself, and their
 	// validation is performed when creating the PSO model object, not here.
 	params->max_t = (unsigned int)

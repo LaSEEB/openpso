@@ -13,8 +13,10 @@
 #include "staticgraph.h"
 #include "../errorhandling.h"
 #include "zf_log.h"
+#include <string.h>
 
-#define MAXFILELINE 20
+#define MAXFILELINE 256
+#define MAXFILENAME 1024
 
 typedef struct pso_sg_adjlist PSO_SG_ADJLIST;
 
@@ -33,7 +35,7 @@ typedef struct {
 } PSO_SG_TOPOL;
 
 static struct {
-	const char *tgf_file;
+	char tgf_file[MAXFILENAME];
 	unsigned int nparticles;
 	long file_edges_start;
 } params;
@@ -42,8 +44,9 @@ unsigned int pso_staticgraph_parse_params(dictionary *d) {
 
 	FILE *fp = NULL;
 	char line[MAXFILELINE];
-	params.tgf_file = iniparser_getstring(d, "topology:tgf_file", 0);
 	int np = 0;
+	strncpy(params.tgf_file,
+		iniparser_getstring(d, "topology:tgf_file", "?"), MAXFILENAME);
 
 	// Parse first part of TGF file, put configuration in params
 	// Determine number of particles
@@ -136,9 +139,9 @@ PSO_TOPOLOGY pso_staticgraph_new(PSO *pso) {
 				i, params.tgf_file);
 		}
 
-		ninfo = (PSO_SG_NEIGH_INFO *) topol->particles[p1].neigh_info;
+		ninfo = (PSO_SG_NEIGH_INFO *) topol->particles[p1 - 1].neigh_info;
 		lst_elem = calloc(1, sizeof(PSO_SG_ADJLIST));
-		lst_elem->p = &topol->particles[p1];
+		lst_elem->p = &topol->particles[p2 - 1];
 		lst_elem->next = ninfo->head;
 		ninfo->head = lst_elem;
 	}
