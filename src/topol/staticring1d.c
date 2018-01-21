@@ -27,7 +27,7 @@ typedef struct {
 
 static struct {
 	unsigned int nparticles;
-    unsigned int radius;
+	unsigned int radius;
 } params;
 
 unsigned int pso_staticring1d_parse_params(dictionary *d) {

@@ -27,6 +27,7 @@
 #include "errorhandling.h"
 #include "topol/staticgrid2d.h"
 #include "topol/staticring1d.h"
+#include "topol/staticgraph.h"
 
 // Constants
 
@@ -196,6 +197,12 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 		params->topol.destroy = pso_staticring1d_destroy;
 		params->topol.iterate = pso_staticring1d_iterate;
 		params->topol.next = pso_staticring1d_next;
+	} else if (strcmp(topol, "staticgraph") == 0) {
+		params->initPopSize = pso_staticgraph_parse_params(ini);
+		params->topol.new = pso_staticgraph_new;
+		params->topol.destroy = pso_staticgraph_destroy;
+		params->topol.iterate = pso_staticgraph_iterate;
+		params->topol.next = pso_staticgraph_next;
 	} else {
 		ERROR_EXIT("Unknown topology '%s'", topol);
 	}
