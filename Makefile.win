@@ -4,8 +4,8 @@
 CPP      = g++.exe
 CC       = gcc.exe
 WINDRES  = windres.exe
-OBJ      = obj/fprng.o obj/functions.o obj/main.o obj/pso.o obj/dictionary.o obj/iniparser.o obj/mtwist.o obj/randistrs.o obj/zf_log.o
-LINKOBJ  = obj/fprng.o obj/functions.o obj/main.o obj/pso.o obj/dictionary.o obj/iniparser.o obj/mtwist.o obj/randistrs.o obj/zf_log.o
+OBJ      = obj/fprng.o obj/functions.o obj/main.o obj/pso.o obj/dictionary.o obj/iniparser.o obj/mtwist.o obj/randistrs.o obj/zf_log.o obj/staticgraph.o obj/staticgrid2d.o obj/staticring1d.o
+LINKOBJ  = obj/fprng.o obj/functions.o obj/main.o obj/pso.o obj/dictionary.o obj/iniparser.o obj/mtwist.o obj/randistrs.o obj/zf_log.o obj/staticgraph.o obj/staticgrid2d.o obj/staticring1d.o
 LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib" -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc -fopenmp "%ProgramFiles(x86)%/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/libgomp.dll.a"
 INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"libs/mtwist" -I"libs/iniparser" -I"libs/zf_log"
 CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++" -I"libs/mtwist" -I"libs/iniparser" -I"libs/zf_log"
@@ -50,3 +50,12 @@ obj/randistrs.o: libs/mtwist/randistrs.c
 
 obj/zf_log.o: libs/zf_log/zf_log.c
 	$(CC) -c libs/zf_log/zf_log.c -o obj/zf_log.o $(CFLAGS)
+
+obj/staticgraph.o: src/topol/staticgraph.c
+	$(CC) -c src/topol/staticgraph.c -o obj/staticgraph.o $(CFLAGS)
+
+obj/staticgrid2d.o: src/topol/staticgrid2d.c
+	$(CC) -c src/topol/staticgrid2d.c -o obj/staticgrid2d.o $(CFLAGS)
+
+obj/staticring1d.o: src/topol/staticring1d.c
+	$(CC) -c src/topol/staticring1d.c -o obj/staticring1d.o $(CFLAGS)
