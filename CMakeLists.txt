@@ -32,8 +32,8 @@ add_definitions("-DMT_GENERATE_CODE_IN_HEADER=0")
 # Directories where to find include files
 include_directories(libs/mtwist libs/iniparser libs/zf_log)
 
-# Create standalone functions library
-add_library(benchfuncs SHARED src/functions.c src/fprng.c)
+# Call CMake on the functions folder
+add_subdirectory(src/functions)
 
 # Create standalone PSO library
 add_library(${PROJECT_NAME} SHARED src/pso.c
@@ -44,11 +44,12 @@ add_library(${PROJECT_NAME} SHARED src/pso.c
 set(PSO_EXE_NAME ${PROJECT_NAME}cli)
 
 # Create executable
-add_executable(${PSO_EXE_NAME} src/main.c src/pso.c src/functions.c src/fprng.c
+add_executable(${PSO_EXE_NAME} src/main.c src/pso.c
 	src/topol/staticgrid2d.c src/topol/staticring1d.c src/topol/staticgraph.c
 	libs/mtwist/mtwist.c libs/mtwist/randistrs.c libs/iniparser/iniparser.c
 	libs/iniparser/dictionary.c libs/zf_log/zf_log.c)
-target_link_libraries(${PSO_EXE_NAME} m)
+target_link_libraries(${PSO_EXE_NAME} m funcs_basic)
+target_include_directories(${PSO_EXE_NAME} PUBLIC src/functions/basic)
 
 # If OpenMP is found and if we are to use it, set appropriate compiler flags
 if (${OPENMP_FOUND} AND ${USE_OPENMP})
