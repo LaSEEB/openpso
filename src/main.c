@@ -23,6 +23,7 @@
 // Local libraries
 #include "iniparser.h"
 #include "functions.h"
+#include "cec15_interface.h"
 #include "pso.h"
 #include "errorhandling.h"
 #include "topol/staticgrid2d.h"
@@ -81,6 +82,21 @@ static pso_func_opt getSelFunc(unsigned int func) {
 		case 8: return &Ackley;
 		case 9: return &ShiftedQuadricWithNoise;
 		case 10: return &RotatedGriewank;
+		case 11: return &cec2015_01;
+		case 12: return &cec2015_02;
+		case 13: return &cec2015_03;
+		case 14: return &cec2015_04;
+		case 15: return &cec2015_05;
+		case 16: return &cec2015_06;
+		case 17: return &cec2015_07;
+		case 18: return &cec2015_08;
+		case 19: return &cec2015_09;
+		case 20: return &cec2015_10;
+		case 21: return &cec2015_11;
+		case 22: return &cec2015_12;
+		case 23: return &cec2015_13;
+		case 24: return &cec2015_14;
+		case 25: return &cec2015_15;
 		default: return NULL;
 	}
 }
@@ -264,7 +280,7 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 		ERROR_EXIT("Invalid input parameter: %s", "n_runs");
 
 	problem = (unsigned int) iniparser_getint(ini, "pso:problem", 0);
-	if ((problem < 1) || (problem > 10))
+	if ((problem < 1) || (problem > 25))
 		ERROR_EXIT("Invalid input parameter: %s", "problem");
 
 	// Release dictionary object
