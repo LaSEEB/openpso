@@ -128,7 +128,7 @@ static pso_func_opt getSelFunc(unsigned int func) {
 		case 53: return &cec2017_bc_28;
 		case 54: return &cec2017_bc_29;
 		case 55: return &cec2017_bc_30;
-/*		case 56: return &cec2017_c_01;
+		case 56: return &cec2017_c_01;
 		case 57: return &cec2017_c_02;
 		case 58: return &cec2017_c_03;
 		case 59: return &cec2017_c_04;
@@ -154,7 +154,7 @@ static pso_func_opt getSelFunc(unsigned int func) {
 		case 79: return &cec2017_c_25;
 		case 80: return &cec2017_c_26;
 		case 81: return &cec2017_c_27;
-		case 82: return &cec2017_c_28;*/
+		case 82: return &cec2017_c_28;
 		default: return NULL;
 	}
 }

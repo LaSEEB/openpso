@@ -7,9 +7,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-extern double *OShift,*M,*M1,*M2,*y,*z,*z1,*z2;
-extern int ini_flag,n_flag,func_flag,f5_flag;
-
 #define INPUT_DATA "data_cec2017_constrained"
 
 #define INF 1.0e99
@@ -17,34 +14,37 @@ extern int ini_flag,n_flag,func_flag,f5_flag;
 #define E  2.7182818284590452353602874713526625
 #define PI 3.1415926535897932384626433832795029
 
-void COP_01 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O1 */
-void COP_02 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O2 */
-void COP_03 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O3 */
-void COP_04 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O4 */
-void COP_05 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O5 */
-void COP_06 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O6 */
-void COP_07 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O7 */
-void COP_08 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O8 */
-void COP_09 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O9 */
-void COP_10 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_10 */
-void COP_11 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_11 */
-void COP_12 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_12 */
-void COP_13 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_13 */
-void COP_14 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_14 */
-void COP_15 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_15 */
-void COP_16 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_15 */
-void COP_17 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_17 */
-void COP_18 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_18 */
-void COP_19 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_19 */
-void COP_20 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_20 */
+static double *OShift,*M,*M1,*M2,*y,*z,*z1,*z2;
+static int ini_flag,n_flag,func_flag,f5_flag;
+
+static void COP_01 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O1 */
+static void COP_02 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O2 */
+static void COP_03 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O3 */
+static void COP_04 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O4 */
+static void COP_05 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O5 */
+static void COP_06 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O6 */
+static void COP_07 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O7 */
+static void COP_08 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O8 */
+static void COP_09 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_O9 */
+static void COP_10 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_10 */
+static void COP_11 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_11 */
+static void COP_12 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_12 */
+static void COP_13 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_13 */
+static void COP_14 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_14 */
+static void COP_15 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_15 */
+static void COP_16 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_15 */
+static void COP_17 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_17 */
+static void COP_18 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_18 */
+static void COP_19 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_19 */
+static void COP_20 (double *, double *, double *, double *, int , double *,double *, int, int); /* COP_20 */
 // Note that COP21-COP28 are  the rotated versioins of COP12-COP18.
-void loadShiftData(int fun_num, int dim, double *pV );
-void loadRotateData(int func_num, int dim, double *pM );
-void shiftfunc (double*,double*,int,double*);
-void rotatefunc (double*,double*,int, double*);
-void sr_func (double *, double *, int, double*, double*, double, int, int); /* shift and rotate */
-int  sgn(double val);
-double round(double val);
+static void loadShiftData(int fun_num, int dim, double *pV );
+static void loadRotateData(int func_num, int dim, double *pM );
+static void shiftfunc (double*,double*,int,double*);
+static void rotatefunc (double*,double*,int, double*);
+static void sr_func (double *, double *, int, double*, double*, double, int, int); /* shift and rotate */
+static int  sgn(double val);
+//static double round(double val);
 
 
 void cec17_test_COP(double *x, double *f, double *g,double *h,int nx, int mx,int func_num)

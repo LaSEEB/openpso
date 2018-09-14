@@ -4,14 +4,14 @@
 
 /**
  * @file
- * Definitions of the CEC2017 bound constrained test function.
+ * Definitions of the CEC2017 constrained test function.
  *
  * @author Nuno Fachada
  */
 
-#ifndef __CEC2017_TEST_FUNC_H_
-#define __CEC2017_TEST_FUNC_H_
+#ifndef __CEC2017_TEST_COP_H_
+#define __CEC2017_TEST_COP_H_
 
-void cec17_test_func(double *x, double *f, int nx, int mx,int func_num);
+void cec17_test_COP(double *x, double *f, double *g,double *h,int nx, int mx,int func_num);
 
 #endif
