@@ -11,11 +11,9 @@
  */
 
 #include "cec17_test_func.h"
-#include <stdio.h>
 
 double cec2017_bc_01(double *vars, unsigned int nvars) {
 	double f;
-	printf("IM HERE!");
 	cec17_test_func(vars, &f, (int) nvars, 1, 1);
 	return f;
 }
