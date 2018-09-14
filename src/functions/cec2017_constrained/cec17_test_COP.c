@@ -10,6 +10,8 @@
 extern double *OShift,*M,*M1,*M2,*y,*z,*z1,*z2;
 extern int ini_flag,n_flag,func_flag,f5_flag;
 
+#define INPUT_DATA "data_cec2017_constrained"
+
 #define INF 1.0e99
 #define EPS 1.0e-14
 #define E  2.7182818284590452353602874713526625
@@ -814,7 +816,7 @@ void loadShiftData(int func_num, int dim, double *pV )
 		/* Load shift_data */
 	    FILE *fpt=NULL;
 		char FileName[256];
-		sprintf(FileName, "D:/inputData/shift_data_%d.txt", func_num);
+		sprintf(FileName, INPUT_DATA "/shift_data_%d.txt", func_num);
 		fpt = fopen(FileName,"r");
 		if (fpt==NULL)
 		{
@@ -835,14 +837,14 @@ void loadRotateData(int func_num, int dim, double *pM )
     FILE *fpt=NULL;
     char FileName[256];
 
-    sprintf(FileName, "D:/inputData/M_%d_D%d.txt",func_num ,dim);
+    sprintf(FileName, INPUT_DATA "/M_%d_D%d.txt",func_num ,dim);
     if ( f5_flag == 1 && func_num == 5)
     {
-       sprintf(FileName, "D:/inputData/M1_%d_D%d.txt",func_num ,dim);
+       sprintf(FileName, INPUT_DATA "/M1_%d_D%d.txt",func_num ,dim);
     }
     if ( f5_flag == 2 && func_num == 5)
     {
-       sprintf(FileName, "D:/inputData/M2_%d_D%d.txt",func_num ,dim);
+       sprintf(FileName, INPUT_DATA "/M2_%d_D%d.txt",func_num ,dim);
     }
     fpt = fopen(FileName,"r");
     if (fpt==NULL)

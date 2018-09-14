@@ -24,6 +24,7 @@
 #include "iniparser.h"
 #include "functions.h"
 #include "cec15_interface.h"
+#include "cec17_bound_constrained_interface.h"
 #include "pso.h"
 #include "errorhandling.h"
 #include "topol/staticgrid2d.h"
@@ -97,6 +98,63 @@ static pso_func_opt getSelFunc(unsigned int func) {
 		case 23: return &cec2015_13;
 		case 24: return &cec2015_14;
 		case 25: return &cec2015_15;
+		case 26: return &cec2017_bc_01;
+		case 27: return &cec2017_bc_02;
+		case 28: return &cec2017_bc_03;
+		case 29: return &cec2017_bc_04;
+		case 30: return &cec2017_bc_05;
+		case 31: return &cec2017_bc_06;
+		case 32: return &cec2017_bc_07;
+		case 33: return &cec2017_bc_08;
+		case 34: return &cec2017_bc_09;
+		case 35: return &cec2017_bc_10;
+		case 36: return &cec2017_bc_11;
+		case 37: return &cec2017_bc_12;
+		case 38: return &cec2017_bc_13;
+		case 39: return &cec2017_bc_14;
+		case 40: return &cec2017_bc_15;
+		case 41: return &cec2017_bc_16;
+		case 42: return &cec2017_bc_17;
+		case 43: return &cec2017_bc_18;
+		case 44: return &cec2017_bc_19;
+		case 45: return &cec2017_bc_20;
+		case 46: return &cec2017_bc_21;
+		case 47: return &cec2017_bc_22;
+		case 48: return &cec2017_bc_23;
+		case 49: return &cec2017_bc_24;
+		case 50: return &cec2017_bc_25;
+		case 51: return &cec2017_bc_26;
+		case 52: return &cec2017_bc_27;
+		case 53: return &cec2017_bc_28;
+		case 54: return &cec2017_bc_29;
+		case 55: return &cec2017_bc_30;
+/*		case 56: return &cec2017_c_01;
+		case 57: return &cec2017_c_02;
+		case 58: return &cec2017_c_03;
+		case 59: return &cec2017_c_04;
+		case 60: return &cec2017_c_05;
+		case 61: return &cec2017_c_06;
+		case 62: return &cec2017_c_07;
+		case 63: return &cec2017_c_08;
+		case 64: return &cec2017_c_09;
+		case 65: return &cec2017_c_10;
+		case 66: return &cec2017_c_11;
+		case 67: return &cec2017_c_12;
+		case 68: return &cec2017_c_13;
+		case 69: return &cec2017_c_14;
+		case 70: return &cec2017_c_15;
+		case 71: return &cec2017_c_17;
+		case 72: return &cec2017_c_18;
+		case 73: return &cec2017_c_19;
+		case 74: return &cec2017_c_20;
+		case 75: return &cec2017_c_21;
+		case 76: return &cec2017_c_22;
+		case 77: return &cec2017_c_23;
+		case 78: return &cec2017_c_24;
+		case 79: return &cec2017_c_25;
+		case 80: return &cec2017_c_26;
+		case 81: return &cec2017_c_27;
+		case 82: return &cec2017_c_28;*/
 		default: return NULL;
 	}
 }
@@ -280,7 +338,7 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 		ERROR_EXIT("Invalid input parameter: %s", "n_runs");
 
 	problem = (unsigned int) iniparser_getint(ini, "pso:problem", 0);
-	if ((problem < 1) || (problem > 25))
+	if ((problem < 1) || (problem > 82))
 		ERROR_EXIT("Invalid input parameter: %s", "problem");
 
 	// Release dictionary object

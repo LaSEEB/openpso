@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define INPUT_DATA "data_cec2017_bound_constrained"
+
 #define INF 1.0e99
 #define EPS 1.0e-14
 #define E  2.7182818284590452353602874713526625
@@ -68,8 +70,8 @@ void asyfunc (double *, double *x, int, double);
 void oszfunc (double *, double *, int);
 void cf_cal(double *, double *, int, double *,double *,double *,double *,int);
 
-extern double *OShift,*M,*y,*z,*x_bound;
-extern int ini_flag,n_flag,func_flag,*SS;
+static double *OShift,*M,*y,*z,*x_bound;
+static int ini_flag,n_flag,func_flag,*SS;
 
 
 void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
@@ -108,7 +110,7 @@ void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
 		}
 
 		/* Load Matrix M*/
-		sprintf(FileName, "input_data/M_%d_D%d.txt", func_num,nx);
+		sprintf(FileName, INPUT_DATA "/M_%d_D%d.txt", func_num,nx);
 		fpt = fopen(FileName,"r");
 		if (fpt==NULL)
 		{
@@ -137,7 +139,7 @@ void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
 		fclose(fpt);
 
 		/* Load shift_data */
-		sprintf(FileName, "input_data/shift_data_%d.txt", func_num);
+		sprintf(FileName, INPUT_DATA "/shift_data_%d.txt", func_num);
 		fpt = fopen(FileName,"r");
 		if (fpt==NULL)
 		{
@@ -180,7 +182,7 @@ void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
 
 		if (func_num>=11&&func_num<=20)
 		{
-			sprintf(FileName, "input_data/shuffle_data_%d_D%d.txt", func_num, nx);
+			sprintf(FileName, INPUT_DATA "/shuffle_data_%d_D%d.txt", func_num, nx);
 			fpt = fopen(FileName,"r");
 			if (fpt==NULL)
 			{
@@ -197,7 +199,7 @@ void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
 		}
 		else if (func_num==29||func_num==30)
 		{
-			sprintf(FileName, "input_data/shuffle_data_%d_D%d.txt", func_num, nx);
+			sprintf(FileName, INPUT_DATA "/shuffle_data_%d_D%d.txt", func_num, nx);
 			fpt = fopen(FileName,"r");
 			if (fpt==NULL)
 			{

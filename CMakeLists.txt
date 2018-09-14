@@ -49,9 +49,10 @@ add_executable(${PSO_EXE_NAME} src/main.c src/pso.c
 	libs/mtwist/mtwist.c libs/mtwist/randistrs.c libs/iniparser/iniparser.c
 	libs/iniparser/dictionary.c libs/zf_log/zf_log.c)
 target_link_libraries(${PSO_EXE_NAME}
-	m funcs_basic funcs_cec2015_ss04_expensive)
+	m funcs_basic funcs_cec2015_ss04_expensive funcs_cec2017_bound_constrained)
 target_include_directories(${PSO_EXE_NAME} PUBLIC
-	src/functions/basic src/functions/cec2015_ss04_expensive)
+	src/functions/basic src/functions/cec2015_ss04_expensive
+	src/functions/basic src/functions/cec2017_bound_constrained)
 
 # If OpenMP is found and if we are to use it, set appropriate compiler flags
 if (${OPENMP_FOUND} AND ${USE_OPENMP})
