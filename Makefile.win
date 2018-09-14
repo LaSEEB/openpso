@@ -4,11 +4,11 @@
 CPP      = g++.exe
 CC       = gcc.exe
 WINDRES  = windres.exe
-OBJ      = obj/fprng.o obj/functions.o obj/main.o obj/pso.o obj/dictionary.o obj/iniparser.o obj/mtwist.o obj/randistrs.o obj/zf_log.o obj/staticgraph.o obj/staticgrid2d.o obj/staticring1d.o
-LINKOBJ  = obj/fprng.o obj/functions.o obj/main.o obj/pso.o obj/dictionary.o obj/iniparser.o obj/mtwist.o obj/randistrs.o obj/zf_log.o obj/staticgraph.o obj/staticgrid2d.o obj/staticring1d.o
+OBJ      = obj/main.o obj/pso.o obj/dictionary.o obj/iniparser.o obj/mtwist.o obj/randistrs.o obj/zf_log.o obj/staticgraph.o obj/staticgrid2d.o obj/staticring1d.o obj/fprng.o obj/functions.o obj/cec15_interface.o obj/cec15_test_func.o obj/cec17_bound_constrained_interface.o obj/cec17_test_func.o
+LINKOBJ  = obj/main.o obj/pso.o obj/dictionary.o obj/iniparser.o obj/mtwist.o obj/randistrs.o obj/zf_log.o obj/staticgraph.o obj/staticgrid2d.o obj/staticring1d.o obj/fprng.o obj/functions.o obj/cec15_interface.o obj/cec15_test_func.o obj/cec17_bound_constrained_interface.o obj/cec17_test_func.o
 LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib" -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc -fopenmp "%ProgramFiles(x86)%/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/libgomp.dll.a"
-INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"libs/mtwist" -I"libs/iniparser" -I"libs/zf_log"
-CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++" -I"libs/mtwist" -I"libs/iniparser" -I"libs/zf_log"
+INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"libs/mtwist" -I"libs/iniparser" -I"libs/zf_log" -I"src/functions/basic" -I"src/functions/cec2015_ss04_expensive" -I"src/functions/cec2017_bound_constrained"
+CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++" -I"libs/mtwist" -I"libs/iniparser" -I"libs/zf_log" -I"src/functions/basic" -I"src/functions/cec2015_ss04_expensive" -I"src/functions/cec2017_bound_constrained"
 BIN      = runpso.exe
 CXXFLAGS = $(CXXINCS) -std=c99 -Wall -Wextra -pedantic
 CFLAGS   = $(INCS) -std=c99 -Wall -Wextra -pedantic -fopenmp -DMT_GENERATE_CODE_IN_HEADER=0
@@ -23,12 +23,6 @@ clean: clean-custom
 
 $(BIN): $(OBJ)
 	$(CC) $(LINKOBJ) -o $(BIN) $(LIBS)
-
-obj/fprng.o: src/fprng.c
-	$(CC) -c src/fprng.c -o obj/fprng.o $(CFLAGS)
-
-obj/functions.o: src/functions.c
-	$(CC) -c src/functions.c -o obj/functions.o $(CFLAGS)
 
 obj/main.o: src/main.c
 	$(CC) -c src/main.c -o obj/main.o $(CFLAGS)
@@ -59,3 +53,21 @@ obj/staticgrid2d.o: src/topol/staticgrid2d.c
 
 obj/staticring1d.o: src/topol/staticring1d.c
 	$(CC) -c src/topol/staticring1d.c -o obj/staticring1d.o $(CFLAGS)
+
+obj/fprng.o: src/functions/basic/fprng.c
+	$(CC) -c src/functions/basic/fprng.c -o obj/fprng.o $(CFLAGS)
+
+obj/functions.o: src/functions/basic/functions.c
+	$(CC) -c src/functions/basic/functions.c -o obj/functions.o $(CFLAGS)
+
+obj/cec15_interface.o: src/functions/cec2015_ss04_expensive/cec15_interface.c
+	$(CC) -c src/functions/cec2015_ss04_expensive/cec15_interface.c -o obj/cec15_interface.o $(CFLAGS)
+
+obj/cec15_test_func.o: src/functions/cec2015_ss04_expensive/cec15_test_func.c
+	$(CC) -c src/functions/cec2015_ss04_expensive/cec15_test_func.c -o obj/cec15_test_func.o $(CFLAGS)
+
+obj/cec17_bound_constrained_interface.o: src/functions/cec2017_bound_constrained/cec17_bound_constrained_interface.c
+	$(CC) -c src/functions/cec2017_bound_constrained/cec17_bound_constrained_interface.c -o obj/cec17_bound_constrained_interface.o $(CFLAGS)
+
+obj/cec17_test_func.o: src/functions/cec2017_bound_constrained/cec17_test_func.c
+	$(CC) -c src/functions/cec2017_bound_constrained/cec17_test_func.c -o obj/cec17_test_func.o $(CFLAGS)

@@ -4,7 +4,7 @@ Name=pso
 Type=1
 Ver=2
 ObjFiles=
-Includes=libs\mtwist;libs\iniparser;libs\zf_log
+Includes=libs\mtwist;libs\iniparser;libs\zf_log;src\functions\basic;src\functions\cec2015_ss04_expensive;src\functions\cec2017_bound_constrained
 Libs=
 PrivateResource=
 ResourceIncludes=
@@ -29,7 +29,7 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=0
 CompilerSettings=00000000a0111000000000000
-UnitCount=24
+UnitCount=32
 
 [VersionInfo]
 Major=1
@@ -51,56 +51,6 @@ AutoIncBuildNr=0
 SyncProduct=1
 
 [Unit1]
-FileName=src\fprng.c
-CompileCpp=0
-Folder=
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit2]
-FileName=src\fprng.h
-CompileCpp=0
-Folder=
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit3]
-FileName=src\functions.c
-CompileCpp=0
-Folder=
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit4]
-FileName=src\functions.h
-CompileCpp=0
-Folder=
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit5]
-FileName=src\functions_data.h
-CompileCpp=0
-Folder=
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit6]
 FileName=src\main.c
 CompileCpp=0
 Folder=
@@ -110,7 +60,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit7]
+[Unit2]
 FileName=src\pso.c
 CompileCpp=0
 Folder=
@@ -120,7 +70,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit8]
+[Unit3]
 FileName=src\pso.h
 CompileCpp=0
 Folder=
@@ -130,7 +80,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit9]
+[Unit4]
 FileName=libs\iniparser\dictionary.c
 CompileCpp=0
 Folder=
@@ -140,7 +90,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit10]
+[Unit5]
 FileName=libs\iniparser\dictionary.h
 CompileCpp=0
 Folder=
@@ -150,7 +100,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit11]
+[Unit6]
 FileName=libs\iniparser\iniparser.c
 CompileCpp=0
 Folder=
@@ -160,7 +110,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit12]
+[Unit7]
 FileName=libs\iniparser\iniparser.h
 CompileCpp=0
 Folder=
@@ -170,7 +120,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit13]
+[Unit8]
 FileName=libs\mtwist\mtwist.c
 CompileCpp=0
 Folder=
@@ -180,7 +130,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit14]
+[Unit9]
 FileName=libs\mtwist\mtwist.h
 CompileCpp=0
 Folder=
@@ -190,7 +140,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit15]
+[Unit10]
 FileName=libs\mtwist\randistrs.c
 CompileCpp=0
 Folder=
@@ -200,7 +150,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit16]
+[Unit11]
 FileName=libs\mtwist\randistrs.h
 CompileCpp=0
 Folder=
@@ -210,7 +160,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit17]
+[Unit12]
 FileName=libs\zf_log\zf_log.c
 CompileCpp=0
 Folder=
@@ -220,7 +170,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit18]
+[Unit13]
 FileName=libs\zf_log\zf_log.h
 CompileCpp=0
 Folder=
@@ -230,7 +180,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit19]
+[Unit14]
 FileName=src\topol\staticgraph.c
 CompileCpp=0
 Folder=
@@ -240,7 +190,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit20]
+[Unit15]
 FileName=src\topol\staticgraph.h
 CompileCpp=0
 Folder=
@@ -250,7 +200,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit21]
+[Unit16]
 FileName=src\topol\staticgrid2d.c
 CompileCpp=0
 Folder=
@@ -260,7 +210,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit22]
+[Unit17]
 FileName=src\topol\staticgrid2d.h
 CompileCpp=0
 Folder=
@@ -270,7 +220,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit23]
+[Unit18]
 FileName=src\topol\staticring1d.c
 CompileCpp=0
 Folder=
@@ -280,8 +230,138 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit24]
+[Unit19]
 FileName=src\topol\staticring1d.h
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit20]
+FileName=src\functions\basic\fprng.c
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit21]
+FileName=src\functions\basic\fprng.h
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit22]
+FileName=src\functions\basic\functions.c
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit23]
+FileName=src\functions\basic\functions.h
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit24]
+FileName=src\functions\basic\functions_data.h
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit25]
+FileName=src\functions\cec2015_ss04_expensive\cec15_interface.c
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit26]
+FileName=src\functions\cec2015_ss04_expensive\cec15_interface.h
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit27]
+FileName=src\functions\cec2015_ss04_expensive\cec15_test_func.c
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit28]
+FileName=src\functions\cec2015_ss04_expensive\cec15_test_func.h
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit29]
+FileName=src\functions\cec2017_bound_constrained\cec17_bound_constrained_interface.c
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit30]
+FileName=src\functions\cec2017_bound_constrained\cec17_bound_constrained_interface.h
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit31]
+FileName=src\functions\cec2017_bound_constrained\cec17_test_func.c
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit32]
+FileName=src\functions\cec2017_bound_constrained\cec17_test_func.h
 CompileCpp=0
 Folder=
 Compile=1
