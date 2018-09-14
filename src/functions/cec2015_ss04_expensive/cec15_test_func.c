@@ -1,6 +1,6 @@
 /*
   CEC14 Test Function Suite for Single Objective Optimization
-  Jane Jing Liang (email: liangjing@zzu.edu.cn; liangjing@pmail.ntu.edu.cn) 
+  Jane Jing Liang (email: liangjing@zzu.edu.cn; liangjing@pmail.ntu.edu.cn)
   Dec. 20th 2013
 */
 
@@ -71,6 +71,11 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 
 	cf_num = cf_numbers[func_num];
 
+#ifdef _OPENMP
+	#pragma omp critical(INITIALIZE)
+	{
+#endif
+
 	if (ini_flag==1)
 	{
 		if ((n_flag!=nx)||(func_flag!=func_num))
@@ -127,7 +132,7 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 			}
 		}
 		fclose(fpt);
-		
+
 		/* Load shift_data */
 		sprintf(FileName, "input_data/shift_data_%d_D%d.txt", func_num,nx);
 		fpt = fopen(FileName,"r");
@@ -162,7 +167,7 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 			{
 				fscanf(fpt,"%lf",&OShift[(cf_num-1)*nx+j]);
 			}
-				
+
 		}
 		fclose(fpt);
 
@@ -185,7 +190,7 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 			for(i=0;i<nx;i++)
 			{
 				fscanf(fpt,"%d",&SS[i]);
-			}	
+			}
 			fclose(fpt);
 		}
 		else if (func_num>=13)
@@ -205,7 +210,7 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 			}
 			fclose(fpt);
 		}
-		
+
 
 		n_flag=nx;
 		func_flag=func_num;
@@ -213,25 +218,24 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 		//printf("Function has been initialized!\n");
 	}
 
-
 	for (i = 0; i < mx; i++)
 	{
 
 		switch(func_num)
 		{
-		//case 1:	
+		//case 1:
 		//	ellips_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 		//	f[i]+=100.0;
 		//	break;
-		case 1:	
+		case 1:
 			bent_cigar_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 			//f[i]+=100*func_num;
 			break;
-		case 2:	
+		case 2:
 			discus_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 			//f[i]+=100*func_num;
 			break;
-		//case 4:	
+		//case 4:
 		//	rosenbrock_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 		//	f[i]+=400.0;
 		//	break;
@@ -243,79 +247,79 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 			weierstrass_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 			//f[i]+=100*func_num;
 			break;
-		//case 7:	
+		//case 7:
 		//	griewank_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 		//	f[i]+=700.0;
 		//	break;
-		//case 8:	
+		//case 8:
 		//	rastrigin_func(&x[i*nx],&f[i],nx,OShift,M,1,0);
 		//	f[i]+=800.0;
 		//	break;
-		//case 9:	
+		//case 9:
 		//	rastrigin_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 		//	f[i]+=900.0;
 		//	break;
-		case 4:	
+		case 4:
 			schwefel_func(&x[i*nx],&f[i],nx,OShift,M,1,0);
 			//f[i]+=100*func_num;
 			break;
-		//case 11:	
+		//case 11:
 		//	schwefel_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 		//	f[i]+=1100.0;
 		//	break;
-		case 5:	
+		case 5:
 			katsuura_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 			//f[i]+=100*func_num;
 			break;
-		case 6:	
+		case 6:
 			happycat_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 			//f[i]+=100*func_num;
 			break;
-		case 7:	
+		case 7:
 			hgbat_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 			//f[i]+=100*func_num;
 			break;
-		case 8:	
+		case 8:
 			grie_rosen_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 			//f[i]+=100*func_num;
 			break;
-		case 9:	
+		case 9:
 			escaffer6_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
 			//f[i]+=100*func_num;
 			break;
-		case 10:	
+		case 10:
 			hf01(&x[i*nx],&f[i],nx,OShift,M,SS,1,1);
 			//f[i]+=100*func_num;
 			break;
-		//case 18:	
+		//case 18:
 		//	hf02(&x[i*nx],&f[i],nx,OShift,M,SS,1,1);
 		//	f[i]+=1800.0;
 		//	break;
-		case 11:	
+		case 11:
 			hf03(&x[i*nx],&f[i],nx,OShift,M,SS,1,1);
 			//f[i]+=100*func_num;
 			break;
-		//case 20:	
+		//case 20:
 		//	hf04(&x[i*nx],&f[i],nx,OShift,M,SS,1,1);
 		//	f[i]+=2000.0;
 		//	break;
-		//case 21:	
+		//case 21:
 		//	hf05(&x[i*nx],&f[i],nx,OShift,M,SS,1,1);
 		//	f[i]+=2100.0;
 		//	break;
-		case 12:	
+		case 12:
 			hf06(&x[i*nx],&f[i],nx,OShift,M,SS,1,1);
 			//f[i]+=100*func_num;
 			break;
-		case 13:	
+		case 13:
 			cf01(&x[i*nx],&f[i],nx,OShift,M,1);
 			//f[i]+=100*func_num;
 			break;
-		//case 24:	
+		//case 24:
 		//	cf02(&x[i*nx],&f[i],nx,OShift,M,1);
 		//	f[i]+=2400.0;
 		//	break;
-		case 14:	
+		case 14:
 			cf03(&x[i*nx],&f[i],nx,OShift,M,1);
 			//f[i]+=100*func_num;
 			break;
@@ -348,9 +352,12 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 		#ifndef NO_RECORDING
 		record(get_number_of_run(), func_num, nx, &x[i*nx], f[i]);
 		#endif //NO_RECORDING
-
-		
 	}
+
+
+#ifdef _OPENMP
+	}
+#endif
 
 }
 
@@ -358,9 +365,9 @@ void sphere_func (double *x, double *f, int nx, double *Os, double *Mr, int s_fl
 {
 	int i;
 	f[0] = 0.0;
-	sr_func (x, z, nx, Os, Mr, 1.0, s_flag, r_flag); /* shift and rotate */	
+	sr_func (x, z, nx, Os, Mr, 1.0, s_flag, r_flag); /* shift and rotate */
 	for (i=0; i<nx; i++)
-	{					
+	{
 		f[0] += z[i]*z[i];
 	}
 
@@ -440,7 +447,7 @@ void schaffer_F7_func (double *x, double *f, int nx, double *Os,double *Mr,int s
 	double tmp;
     f[0] = 0.0;
 	sr_func (x, z, nx, Os, Mr, 1.0, s_flag, r_flag); /* shift and rotate */
-	for (i=0; i<nx-1; i++)	
+	for (i=0; i<nx-1; i++)
 	{
 		z[i]=pow(y[i]*y[i]+y[i+1]*y[i+1],0.5);
 		tmp=sin(50.0*pow(z[i],0.2));
@@ -650,7 +657,7 @@ void bi_rastrigin_func (double *x, double *f, int nx, double *Os,double *Mr,int 
 		for (i=0; i<nx; i++)
 		{
 			tmp+=cos(2.0*PI*y[i]);
-		}	
+		}
 		if(tmp1<tmp2)
 			f[0] = tmp1;
 		else
@@ -662,7 +669,7 @@ void bi_rastrigin_func (double *x, double *f, int nx, double *Os,double *Mr,int 
 		for (i=0; i<nx; i++)
 		{
 			tmp+=cos(2.0*PI*z[i]);
-		}	
+		}
 		if(tmp1<tmp2)
 			f[0] = tmp1;
 		else
@@ -688,7 +695,7 @@ void grie_rosen_func (double *x, double *f, int nx, double *Os,double *Mr,int s_
 		tmp1 = z[i]*z[i]-z[i+1];
 		tmp2 = z[i]-1.0;
         temp = 100.0*tmp1*tmp1 + tmp2*tmp2;
-         f[0] += (temp*temp)/4000.0 - cos(temp) + 1.0; 
+         f[0] += (temp*temp)/4000.0 - cos(temp) + 1.0;
     }
 	tmp1 = z[nx-1]*z[nx-1]-z[0];
 	tmp2 = z[nx-1]-1.0;
@@ -724,7 +731,7 @@ void happycat_func (double *x, double *f, int nx, double *Os,double *Mr,int s_fl
 	int i;
 	double alpha,r2,sum_z;
 	alpha=1.0/8.0;
-	
+
 	sr_func (x, z, nx, Os, Mr, 5.0/100.0, s_flag, r_flag); /* shift and rotate */
 
 	r2 = 0.0;
@@ -873,7 +880,7 @@ void hf03 (double *x, double *f, int nx, double *Os,double *Mr,int *S,int s_flag
 	rosenbrock_func(&y[G[i]],&fit[i],G_nx[i],Os,Mr,0,0);
 	i=3;
 	escaffer6_func(&y[G[i]],&fit[i],G_nx[i],Os,Mr,0,0);
-	
+
 	f[0]=0.0;
 	for(i=0;i<cf_num;i++)
 	{
@@ -916,7 +923,7 @@ void hf04 (double *x, double *f, int nx, double *Os,double *Mr,int *S,int s_flag
 	grie_rosen_func(&y[G[i]],&fit[i],G_nx[i],Os,Mr,0,0);
 	i=3;
 	rastrigin_func(&y[G[i]],&fit[i],G_nx[i],Os,Mr,0,0);
-	
+
 	f[0]=0.0;
 	for(i=0;i<cf_num;i++)
 	{
@@ -951,7 +958,7 @@ void hf05 (double *x, double *f, int nx, double *Os,double *Mr,int *S,int s_flag
 		y[i]=z[S[i]-1];
 	}
 	i=0;
-	escaffer6_func(&y[G[i]],&fit[i],G_nx[i],Os,Mr,0,0); 
+	escaffer6_func(&y[G[i]],&fit[i],G_nx[i],Os,Mr,0,0);
 	i=1;
 	hgbat_func(&y[G[i]],&fit[i],G_nx[i],Os,Mr,0,0);
 	i=2;
@@ -1018,22 +1025,22 @@ void cf01 (double *x, double *f, int nx, double *Os,double *Mr,int r_flag) /* Co
 	double fit[5];
 	double delta[5] = {10, 20, 30, 40, 50};
 	double bias[5] = {0, 100, 200, 300, 400};
-	
+
 	i=0;
 	rosenbrock_func(x,&fit[i],nx,&Os[i*nx],&Mr[i*nx*nx],1,r_flag);
-	fit[i]=10000*fit[i]/1e+4;	
+	fit[i]=10000*fit[i]/1e+4;
 	i=1;
 	ellips_func(x,&fit[i],nx,&Os[i*nx],&Mr[i*nx*nx],1,r_flag);
 	fit[i]=10000*fit[i]/1e+10;
 	i=2;
 	bent_cigar_func(x,&fit[i],nx,&Os[i*nx],&Mr[i*nx*nx],1,r_flag);
-	fit[i]=10000*fit[i]/1e+30;	
+	fit[i]=10000*fit[i]/1e+30;
 	i=3;
 	discus_func(x,&fit[i],nx,&Os[i*nx],&Mr[i*nx*nx],1,r_flag);
-	fit[i]=10000*fit[i]/1e+10;	
+	fit[i]=10000*fit[i]/1e+10;
 	i=4;
 	ellips_func(x,&fit[i],nx,&Os[i*nx],&Mr[i*nx*nx],1,0);
-	fit[i]=10000*fit[i]/1e+10;	
+	fit[i]=10000*fit[i]/1e+10;
 	cf_cal(x, f, nx, Os, delta,bias,fit,cf_num);
 }
 
@@ -1203,7 +1210,7 @@ void sr_func (double *x, double *sr_x, int nx, double *Os,double *Mr, double sh_
 	if (s_flag==1)
 	{
 		if (r_flag==1)
-		{	
+		{
 			shiftfunc(x, y, nx, Os);
 			for (i=0; i<nx; i++)//shrink to the original search range
 			{
@@ -1221,10 +1228,10 @@ void sr_func (double *x, double *sr_x, int nx, double *Os,double *Mr, double sh_
 		}
 	}
 	else
-	{	
+	{
 
 		if (r_flag==1)
-		{	
+		{
 			for (i=0; i<nx; i++)//shrink to the original search range
 			{
 				y[i]=x[i]*sh_rate;
@@ -1260,7 +1267,7 @@ void oszfunc (double *x, double *xosz, int nx)
 			if (x[i]!=0)
 				xx=log(fabs(x[i]));
 			if (x[i]>0)
-			{	
+			{
 				c1=10;
 				c2=7.9;
 			}
@@ -1268,7 +1275,7 @@ void oszfunc (double *x, double *xosz, int nx)
 			{
 				c1=5.5;
 				c2=3.1;
-			}	
+			}
 			if (x[i]>0)
 				sx=1;
 			else if (x[i]==0)

@@ -61,6 +61,9 @@ if (${OPENMP_FOUND} AND ${USE_OPENMP})
 	set_target_properties(${PROJECT_NAME} PROPERTIES
 		COMPILE_FLAGS ${OpenMP_C_FLAGS}
 		LINK_FLAGS ${OpenMP_C_FLAGS})
+	set_target_properties(funcs_cec2015_ss04_expensive PROPERTIES
+		COMPILE_FLAGS ${OpenMP_C_FLAGS}
+		LINK_FLAGS ${OpenMP_C_FLAGS})
 	message("Using OpenMP!")
 else()
 	message("No OpenMP :(")

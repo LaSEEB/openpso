@@ -12,9 +12,11 @@
 #include "cec15_test_func.h"
 
 double cec2015_01(double *vars, unsigned int nvars) {
+
 	double f;
 	cec15_test_func(vars, &f, (int) nvars, 1, 1);
 	return f;
+
 }
 
 double cec2015_02(double *vars, unsigned int nvars) {
