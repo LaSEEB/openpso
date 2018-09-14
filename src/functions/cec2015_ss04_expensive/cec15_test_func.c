@@ -10,7 +10,7 @@
 #include <malloc.h>
 #include "cec15_test_func.h"
 
-
+#define INPUT_FOLDER "data_cec2015_ss04_expensive"
 
 int get_number_of_run();
 void record(int number_of_run, int func_number, int dim, double* x, double fx);
@@ -104,12 +104,12 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 			printf("\nError: Test functions are only defined for D=10,30.\n");
 		}
 		/* Load Matrix M*/
-		sprintf(FileName, "input_data/M_%d_D%d.txt", func_num,nx);
+		sprintf(FileName, INPUT_FOLDER "/M_%d_D%d.txt", func_num,nx);
 
 		fpt = fopen(FileName,"r");
 		if (fpt==NULL)
 		{
-		    printf("\n Error: Cannot open input file for reading \n");
+		    printf("\n Error: Cannot open input file from folder '" INPUT_FOLDER "' for reading \n");
 		}
 		if (func_num<13)
 		{
@@ -134,11 +134,11 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 		fclose(fpt);
 
 		/* Load shift_data */
-		sprintf(FileName, "input_data/shift_data_%d_D%d.txt", func_num,nx);
+		sprintf(FileName, INPUT_FOLDER "/shift_data_%d_D%d.txt", func_num,nx);
 		fpt = fopen(FileName,"r");
 		if (fpt==NULL)
 		{
-			printf("\n Error: Cannot open input file for reading \n");
+			printf("\n Error: Cannot open input file from folder '" INPUT_FOLDER "' for reading \n");
 		}
 
 		if (func_num<13)
@@ -173,7 +173,7 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 
 
 		/* Load Shuffle_data */
-		sprintf(FileName, "input_data/shuffle_data_%d_D%d.txt", func_num,nx);
+		sprintf(FileName, INPUT_FOLDER "/shuffle_data_%d_D%d.txt", func_num,nx);
 
 		if (func_num>=10&&func_num<=12)
 		{
@@ -181,7 +181,7 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 			fpt = fopen(FileName,"r");
 			if (fpt==NULL)
 			{
-				printf("\n Error: Cannot open input file for reading \n");
+				printf("\n Error: Cannot open input file from folder '" INPUT_FOLDER "' for reading \n");
 			}
 			SS=(int *)malloc(nx*sizeof(int));
 			if (SS==NULL)
@@ -199,7 +199,7 @@ void cec15_test_func(double *x, double *f, int nx, int mx,int func_num)
 			fpt = fopen(FileName,"r");
 			if (fpt==NULL)
 			{
-				printf("\n Error: Cannot open input file for reading \n");
+				printf("\n Error: Cannot open input file from folder '" INPUT_FOLDER "' for reading \n");
 			}
 			SS=(int *)malloc(nx*cf_num*sizeof(int));
 			if (SS==NULL)
