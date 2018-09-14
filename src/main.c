@@ -128,33 +128,6 @@ static pso_func_opt getSelFunc(unsigned int func) {
 		case 53: return &cec2017_bc_28;
 		case 54: return &cec2017_bc_29;
 		case 55: return &cec2017_bc_30;
-		case 56: return &cec2017_c_01;
-		case 57: return &cec2017_c_02;
-		case 58: return &cec2017_c_03;
-		case 59: return &cec2017_c_04;
-		case 60: return &cec2017_c_05;
-		case 61: return &cec2017_c_06;
-		case 62: return &cec2017_c_07;
-		case 63: return &cec2017_c_08;
-		case 64: return &cec2017_c_09;
-		case 65: return &cec2017_c_10;
-		case 66: return &cec2017_c_11;
-		case 67: return &cec2017_c_12;
-		case 68: return &cec2017_c_13;
-		case 69: return &cec2017_c_14;
-		case 70: return &cec2017_c_15;
-		case 71: return &cec2017_c_17;
-		case 72: return &cec2017_c_18;
-		case 73: return &cec2017_c_19;
-		case 74: return &cec2017_c_20;
-		case 75: return &cec2017_c_21;
-		case 76: return &cec2017_c_22;
-		case 77: return &cec2017_c_23;
-		case 78: return &cec2017_c_24;
-		case 79: return &cec2017_c_25;
-		case 80: return &cec2017_c_26;
-		case 81: return &cec2017_c_27;
-		case 82: return &cec2017_c_28;
 		default: return NULL;
 	}
 }
@@ -338,7 +311,7 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 		ERROR_EXIT("Invalid input parameter: %s", "n_runs");
 
 	problem = (unsigned int) iniparser_getint(ini, "pso:problem", 0);
-	if ((problem < 1) || (problem > 82))
+	if ((problem < 1) || (problem > 55))
 		ERROR_EXIT("Invalid input parameter: %s", "problem");
 
 	// Release dictionary object
