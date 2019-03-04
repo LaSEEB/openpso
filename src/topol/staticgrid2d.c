@@ -141,6 +141,8 @@ void pso_staticgrid2d_destroy(PSO_TOPOLOGY topol) {
 		free(grid2d->particles[x]);
 	}
 	free(grid2d->particles);
+
+	free(grid2d);
 }
 
 /// Function which restarts a neighbor iterator, defined by the specific

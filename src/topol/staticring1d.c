@@ -93,6 +93,7 @@ void pso_staticring1d_destroy(PSO_TOPOLOGY topol) {
 		free(ring1d->particles[i]->neigh_info);
 	}
 	free(ring1d->particles);
+	free(ring1d);
 }
 
 /// Function which restarts a neighbor iterator, defined by the specific
