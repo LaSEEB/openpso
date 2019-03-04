@@ -89,7 +89,9 @@ typedef struct {
 	double initialXmin;
 	//
 	double initialXmax;
-	/// Stop criterion
+	// Number of extra random particles for small world PSO
+	int numExtraRndNeighs;
+	// Stop criterion
 	double crit;
 	// Keep going until max_evaluations after stop criterion is meet?
 	int crit_keep_going;

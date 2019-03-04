@@ -120,6 +120,9 @@ static const char *pso_validate_params(PSO_PARAMS params) {
 	if (params.initialXmax < -DBL_MAX + 0.1) //FIXME
 		return "Invalid input parameter: initialXmax";
 
+	if (params.numExtraRndNeighs < 0)
+		return "Invalid input parameter: numExtraRndNeighs";
+
 	if (params.crit < -DBL_MAX + 0.1) //FIXME and am I needed here?
 		return "Invalid input parameter: crit";
 
@@ -507,8 +510,12 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 
 	// Cycle through particles
 #ifdef _OPENMP
+	unsigned int tid = omp_get_thread_num();
 	#pragma omp parallel for reduction(+:evals) schedule(dynamic, 1)
+#else
+	unsigned int tid = 0;
 #endif
+
 	for (unsigned int a = 0; a < pso->pop_size; ++a) {
 
 		// By default particle update is set to 0 (only relevant to SS-PSO)
@@ -544,6 +551,69 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 			}
 
 		} // Cycle neighbors
+
+		// Consider extra neighbors (Small World PSO)?
+		if (pso->params.numExtraRndNeighs > 0) {
+			for (int i = 0; i < pso->params.numExtraRndNeighs; i++) {
+
+				int rpID;
+				PSO_PARTICLE* randomParticle;
+
+				// Obtain random particle which is not a neighbor
+				while (1) {
+
+					// Obtain random particle
+					rpID = rds_iuniform(
+						&pso->prng_states[tid], 0, pso->pop_size);
+					randomParticle = &pso->particles[rpID];
+
+					// Is random particle the current particle?
+					if (randomParticle == currParticle) {
+						// If so, search for another random particle
+						continue;
+					}
+
+					// Is random particle a neighbor?
+					pso->params.topol.iterate(pso->topol, currParticle);
+					while ((neighParticle =
+						pso->params.topol.next(pso->topol, currParticle))
+						!= NULL)
+					{
+						if (randomParticle == neighParticle)
+						{
+							// If so, search for another random particle
+							continue;
+						}
+					}
+
+					// If we get here, random particle is not a neighbor, so
+					// break out of the loop
+					break;
+				}
+
+				// Exchange knowledge with random particle
+
+				// If a random particle is the worst particle...
+				if (randomParticle == pso->worst_particle)
+					// ...mark current particle for updating (SS-PSO only)
+					update = 1;
+
+				// Does the random particle know of better fitness than current
+				// particle?
+				if (randomParticle->best_fitness_so_far <
+						currParticle->informants_best_fitness_so_far) {
+
+					// If so, current particle will get that knowledge also
+					currParticle->informants_best_fitness_so_far =
+						randomParticle->best_fitness_so_far;
+
+					memmove(
+						currParticle->informants_best_position_so_far,
+						randomParticle->best_position_so_far,
+						pso->params.nvars * sizeof(double));
+				}
+			}
+		}
 
 		// Update current particle?
 		if (

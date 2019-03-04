@@ -299,6 +299,9 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 	params->initialXmax =
 		iniparser_getdouble(ini, "pso:initialxmax", -DBL_MAX);
 
+	params->numExtraRndNeighs =
+		iniparser_getint(ini, "pso:numextrarndneighs", 0);
+
 	params->crit = iniparser_getdouble(ini, "pso:crit", -DBL_MAX);
 
 	params->crit_keep_going =
