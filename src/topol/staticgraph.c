@@ -154,6 +154,9 @@ PSO_TOPOLOGY pso_staticgraph_new(PSO *pso) {
 		ninfo->head = lst_elem;
 	}
 
+	// Close TGF file
+	fclose(fp);
+
 	return (PSO_TOPOLOGY) topol;
 }
 
