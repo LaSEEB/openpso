@@ -15,7 +15,6 @@
 #include "zf_log.h"
 
 typedef struct {
-	unsigned int pos;
 	unsigned int iter;
 } PSO_SR1D_NEIGH_INFO;
 
@@ -46,28 +45,20 @@ PSO_TOPOLOGY pso_staticring1d_new(PSO *pso) {
 
 	PSO_SR1D_TOPOL *ring1d = malloc(sizeof(PSO_SR1D_TOPOL));
 
-	// Setup neighbor mask
-
 	// Initialize cells
 	ring1d->particles = calloc(params.nparticles, sizeof(PSO_PARTICLE *));
-	ring1d->num_neighs = 2 * params.radius;
+	ring1d->num_neighs = 2 * params.radius + 1;
 	ring1d->neighs = malloc(ring1d->num_neighs * sizeof(int));
 
+	// Setup neighbor mask
 	for (unsigned int i = 0; i < ring1d->num_neighs; ++i) {
-		int pos;
-		if (i < ring1d->num_neighs / 2) {
-			pos = i - (int) params.radius;
-		} else {
-			pos = i - (int) params.radius + 1;
-		}
-		ring1d->neighs[i] = pos;
+		ring1d->neighs[i] = (int) i - (int) (ring1d->num_neighs / 2);
 	}
 
 	for (unsigned int i = 0; i < params.nparticles; ++i) {
 
 		// Define neighbor information for this cell
 		PSO_SR1D_NEIGH_INFO *ninfo = malloc(sizeof(PSO_SR1D_NEIGH_INFO));
-		ninfo->pos = i;
 		ninfo->iter = 0;
 
 		// Set cell as occupied
@@ -117,13 +108,13 @@ PSO_PARTICLE *pso_staticring1d_next(PSO_TOPOLOGY topol, PSO_PARTICLE *p) {
 
 	if (ninfo->iter < ring1d->num_neighs) {
 
-		int i = (int) ninfo->pos + ring1d->neighs[ninfo->iter];
+		int i = (int) p->id + ring1d->neighs[ninfo->iter];
 
 		ninfo->iter++;
 
 		// Adjust neighbors location according to ring topology
 		if (i < 0)
-			i = (int) params.nparticles - i;
+			i = i + (int) params.nparticles;
 		if (i >= (int) params.nparticles)
 			i = i - (int) params.nparticles;
 
