@@ -105,6 +105,14 @@ PSO_TOPOLOGY pso_staticgraph_new(PSO *pso) {
 		// Define neighbor information for this cell
 		PSO_SG_NEIGH_INFO *ninfo = calloc(1, sizeof(PSO_SG_NEIGH_INFO));
 
+		// Allocate memory for the first neighbor
+		PSO_SG_ADJLIST *lst_elem = calloc(1, sizeof(PSO_SG_ADJLIST));
+
+		// First neighbor is always the cell itself
+		lst_elem->p = &topol->particles[i];
+		lst_elem->next = NULL;
+		ninfo->head = lst_elem;
+
 		// Keep neighbor info for this cell
 		topol->particles[i].neigh_info = ninfo;
 	}
