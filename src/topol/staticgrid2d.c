@@ -63,12 +63,14 @@ static const PSO_SG2S_NEIGHBORHOOD neighbors_ring = {
 unsigned int pso_staticgrid2d_parse_params(dictionary *d) {
 
 	const char *neighborhood =
-		iniparser_getstring(d, "topology:neighborhood", "Moore");
+		iniparser_getstring(d, "topology:neighborhood", "MOORE");
 
 	if (strcmp(neighborhood, "MOORE") == 0) {
 		params.neighborhood = MOORE;
 	} else if (strcmp(neighborhood, "VN") == 0) {
 		params.neighborhood = VON_NEUMANN;
+	} else if (strcmp(neighborhood, "RING") == 0) {
+		params.neighborhood = RING;
 	} else {
 		ERROR_EXIT("Unknown Grid2D neighborhood: '%s'", neighborhood);
 	}
