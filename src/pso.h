@@ -103,6 +103,7 @@ struct pso_particle {
 	//int y;
 	void *neigh_info;
 
+	unsigned int id;
 	double fitness;
 	double best_fitness_so_far;
 	double informants_best_fitness_so_far;

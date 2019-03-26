@@ -276,6 +276,9 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 
 	// Initialize individual particles
 	for (unsigned int i = 0; i < pso->pop_size; ++i) {
+
+		pso->particles[i].id = i;
+
 		pso->particles[i].informants_best_position_so_far =
 			(double *) calloc(pso->params.nvars, sizeof(double));
 		pso->particles[i].best_position_so_far =
@@ -526,9 +529,13 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 
 		pso->params.topol.iterate(pso->topol, currParticle);
 
+		ZF_LOGV("Particle %d\n", currParticle->id);
+
 		// Cycle through neighbors
 		while ((neighParticle =
 			pso->params.topol.next(pso->topol, currParticle)) != NULL) {
+
+			ZF_LOGV("\tNeigh %d\n", neighParticle->id);
 
 			// If a neighbor particle is the worst particle...
 			if (neighParticle == pso->worst_particle)
@@ -590,6 +597,8 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 					// break out of the loop
 					break;
 				}
+
+				ZF_LOGV("\tNeigh %d\n", randomParticle->id);
 
 				// Exchange knowledge with random particle
 
