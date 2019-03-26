@@ -529,13 +529,13 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 
 		pso->params.topol.iterate(pso->topol, currParticle);
 
-		ZF_LOGV("Particle %d\n", currParticle->id);
+		ZF_LOGV("Particle %d", currParticle->id);
 
 		// Cycle through neighbors
 		while ((neighParticle =
 			pso->params.topol.next(pso->topol, currParticle)) != NULL) {
 
-			ZF_LOGV("\tNeigh %d\n", neighParticle->id);
+			ZF_LOGV("\tNeigh %d", neighParticle->id);
 
 			// If a neighbor particle is the worst particle...
 			if (neighParticle == pso->worst_particle)
@@ -598,7 +598,7 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 					break;
 				}
 
-				ZF_LOGV("\tNeigh %d\n", randomParticle->id);
+				ZF_LOGV("\tNeigh %d", randomParticle->id);
 
 				// Exchange knowledge with random particle
 
