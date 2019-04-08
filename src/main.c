@@ -44,7 +44,7 @@
 /// Default input file
 #define FILE_INPUT_DEFAULT "input.ini"
 /// File where to save average best so far fitness between runs
-#define FILE_AVG_BEST_SO_FAR "AVE_BESTSOFAR.DAT"
+#define FILE_BSF_SAVE "BESTSOFAR.DAT"
 /// File where to save number of evaluations required to reach criterion per run
 #define FILE_EVALS "AES.DAT"
 /// File where to save final fitness per run
@@ -138,18 +138,22 @@ static pso_func_opt getSelFunc(unsigned int func) {
 static unsigned int prng_seed;
 /// File containing PSO parameters.
 static char input_file[FILE_MAX_LEN];
-/// Average best so for between runs
-static double * averageBestSoFar;
-/// Average best so far counter
-static unsigned int avsf_counter;
+/// Best so for between runs
+static double * bsf_btw_runs;
+/// Best so far save counter
+static unsigned int bsf_save_counter;
 /// Number of threads.
 static unsigned int num_threads;
 /// Problem to solve
 static unsigned int problem;
-// Number of runs
+/// Number of runs
 static unsigned int n_runs;
-// Evaluation interval after which statistics should be saved
-static unsigned int evals_stats;
+// Current run
+static unsigned int r;
+/// Evaluation period after which best so far fitness should be saved
+static unsigned int bsf_save_period;
+/// How many best so far fitnesses will be saved per run
+static unsigned int bsf_save_per_run;
 
 // Helper function for comparing two doubles
 static int cmpdbl(const void *a, const void *b) {
@@ -173,15 +177,16 @@ static char *uint2str(unsigned int evals) {
 	return str;
 }
 
-// End-of-iteration hook for saving fitness averages between runs during the
+// End-of-iteration hook for saving best so far fitness between runs during the
 // course of the PSO algorithm
 static void avg_best_so_far(PSO *pso) {
 
-	// Is it time to update the average (between runs) best so far?
-	if (pso->evaluations - avsf_counter * evals_stats >= evals_stats) {
-		averageBestSoFar[avsf_counter] +=
-			pso->best_so_far / (double) n_runs;
-		avsf_counter++;
+	// Is it time to save best so far fitness for current run?
+	if (pso->evaluations - bsf_save_counter * bsf_save_period >= bsf_save_period)
+	{
+		bsf_btw_runs[r * bsf_save_per_run + bsf_save_counter] =
+			pso->best_so_far;
+		bsf_save_counter++;
 	}
 }
 
@@ -319,9 +324,10 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 	if ((problem < 1) || (problem > 55))
 		ERROR_EXIT("Invalid input parameter: %s", "problem");
 
-	evals_stats = (unsigned int) iniparser_getint(ini, "pso:evals_stats", 100);
-	if (evals_stats < 1)
-		ERROR_EXIT("Invalid input parameter: %s", "evals_stats");
+	bsf_save_period = (unsigned int) iniparser_getint(
+		ini, "pso:bsf_save_period", 100);
+	if (bsf_save_period < 1)
+		ERROR_EXIT("Invalid input parameter: %s", "bsf_save_period");
 
 	// Release dictionary object
 	iniparser_freedict(ini);
@@ -369,20 +375,22 @@ int main(int argc, char *argv[]) {
 	printf("PRNG seed          : %d\n", prng_seed);
 	printf("\n");
 
-	// Initialize averageBestSoFar array, set contents to zero
-	averageBestSoFar =
-		(double *) calloc(params.max_evaluations / evals_stats, sizeof(double));
+	// How many best so far fitnesses will be saved per run?
+	bsf_save_per_run = params.max_evaluations / bsf_save_period;
+
+	// Initialize bsf_btw_runs array, set contents to zero
+	bsf_btw_runs = (double *) calloc(bsf_save_per_run * n_runs, sizeof(double));
 
 	printf("\nRUNS\n----\n");
 
 	// Perform PSO runs
-	for (unsigned int i = 0; i < n_runs; ++i) {
+	for (r = 0; r < n_runs; ++r) {
 
 		// Reset average best so far counter
-		avsf_counter = 0;
+		bsf_save_counter = 0;
 
 		// Initialize PSO for current run
-		pso = pso_new(params , getSelFunc(problem), prng_seed + i);
+		pso = pso_new(params , getSelFunc(problem), prng_seed + r);
 		if (!pso) ERROR_EXIT("%s", pso_error);
 
 		// Add end-of-iteration hooks
@@ -394,32 +402,37 @@ int main(int argc, char *argv[]) {
 		// If the number of evaluations was not enough to get below the stop
 		// criteria, set it to the maximum number of performed evaluations
 		if (pso->crit_evals) {
-			crit_evals[i] = pso->crit_evals;
+			crit_evals[r] = pso->crit_evals;
 			successes++;
 		} else {
-			crit_evals[i] = UINT_MAX;
+			crit_evals[r] = UINT_MAX;
 		}
 
 		// Inform user of current run performance
 		printf("Run %4u | BestFit = %10.5g | AvgFit = %10.5g | "
-			"Evals = %10s\n", i, (double) pso->best_so_far,
+			"Evals = %10s\n", r, (double) pso->best_so_far,
 			(double) pso->average_fitness,
-			pso->crit_evals ? uint2str(crit_evals[i]) : "--");
+			pso->crit_evals ? uint2str(crit_evals[r]) : "--");
 
 		// Keep best so far for current run
-		best_so_far[i] = (double) pso->best_so_far;
+		best_so_far[r] = (double) pso->best_so_far;
 
 		// Release PSO model for current run
 		pso_destroy(pso);
 	}
 
-	// Save file containing the average (between runs) best so far fitness
-	// after 100, 200, ... evaluations.
-	out = fopen(FILE_AVG_BEST_SO_FAR, "w");
-	for (unsigned int i = 0; i < avsf_counter; ++i)
-		fprintf(out, "%.40g\n", (double) averageBestSoFar[i]);
+	// Save file containing the best so far fitness between runs
+	out = fopen(FILE_BSF_SAVE, "w");
+	for (unsigned int i = 0; i < bsf_save_per_run; i++)
+	{
+		for (unsigned int j = 0; j < n_runs; ++j)
+		{
+			fprintf(out, "\t%.40g", (double) bsf_btw_runs[j * bsf_save_per_run + i]);
+		}
+		fprintf(out, "\n");
+	}
 	fclose(out);
-	free(averageBestSoFar);
+	free(bsf_btw_runs);
 
 	// Save number of evaluations required for getting below stop criterion
 	out = fopen(FILE_EVALS, "w");
