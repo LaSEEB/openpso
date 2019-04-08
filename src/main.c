@@ -148,6 +148,8 @@ static unsigned int num_threads;
 static unsigned int problem;
 // Number of runs
 static unsigned int n_runs;
+// Evaluation interval after which statistics should be saved
+static unsigned int evals_stats;
 
 // Helper function for comparing two doubles
 static int cmpdbl(const void *a, const void *b) {
@@ -176,7 +178,7 @@ static char *uint2str(unsigned int evals) {
 static void avg_best_so_far(PSO *pso) {
 
 	// Is it time to update the average (between runs) best so far?
-	if (pso->evaluations % 100 == 0) {
+	if (pso->evaluations - avsf_counter * evals_stats >= evals_stats) {
 		averageBestSoFar[avsf_counter] +=
 			pso->best_so_far / (double) n_runs;
 		avsf_counter++;
@@ -317,9 +319,12 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 	if ((problem < 1) || (problem > 55))
 		ERROR_EXIT("Invalid input parameter: %s", "problem");
 
+	evals_stats = (unsigned int) iniparser_getint(ini, "pso:evals_stats", 100);
+	if (evals_stats < 1)
+		ERROR_EXIT("Invalid input parameter: %s", "evals_stats");
+
 	// Release dictionary object
 	iniparser_freedict(ini);
-
 }
 
 /**
@@ -366,7 +371,7 @@ int main(int argc, char *argv[]) {
 
 	// Initialize averageBestSoFar array, set contents to zero
 	averageBestSoFar =
-		(double *) calloc(params.max_evaluations / 100, sizeof(double));
+		(double *) calloc(params.max_evaluations / evals_stats, sizeof(double));
 
 	printf("\nRUNS\n----\n");
 

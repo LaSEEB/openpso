@@ -325,7 +325,7 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 			pso->particles[i].best_position_so_far[j] =
 				pso->particles[i].position[j];
 
-			// Set best informat so far as myself
+			// Set best informant so far as myself
 			pso->particles[i].informants_best_position_so_far[j] =
 				pso->particles[i].position[j];
 		}
@@ -637,10 +637,10 @@ void pso_update_particles(unsigned int iter, PSO *pso) {
 			evals++;
 		}
 
-	 } // End parallel for - cycle particles
+	} // End parallel for - cycle particles
 
-	 // Increment global number of evaluations
-	 pso->evaluations += evals;
+	// Increment global number of evaluations
+	pso->evaluations += evals;
 
 }
 
