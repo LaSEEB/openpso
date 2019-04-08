@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <float.h>
 #include <limits.h>
+#include <assert.h>
 #ifdef _OPENMP
 	#include <omp.h>
 #endif
@@ -140,8 +141,16 @@ static unsigned int prng_seed;
 static char input_file[FILE_MAX_LEN];
 /// Best so for between runs
 static double * bsf_btw_runs;
+/// Evaluations at which best so far is saved
+static unsigned int * bsf_save_evals;
 /// Best so far save counter
 static unsigned int bsf_save_counter;
+/// Evaluation period after which best so far fitness should be saved
+static unsigned int bsf_save_period;
+/// How many best so far fitnesses will be saved per run
+static unsigned int bsf_save_per_run;
+
+
 /// Number of threads.
 static unsigned int num_threads;
 /// Problem to solve
@@ -150,10 +159,6 @@ static unsigned int problem;
 static unsigned int n_runs;
 // Current run
 static unsigned int r;
-/// Evaluation period after which best so far fitness should be saved
-static unsigned int bsf_save_period;
-/// How many best so far fitnesses will be saved per run
-static unsigned int bsf_save_per_run;
 
 // Helper function for comparing two doubles
 static int cmpdbl(const void *a, const void *b) {
@@ -186,6 +191,15 @@ static void avg_best_so_far(PSO *pso) {
 	{
 		bsf_btw_runs[r * bsf_save_per_run + bsf_save_counter] =
 			pso->best_so_far;
+		if (r == 0)
+		{
+			bsf_save_evals[bsf_save_counter] = pso->evaluations;
+		}
+		else
+		{
+			assert(bsf_save_evals[bsf_save_counter] == pso->evaluations);
+		}
+
 		bsf_save_counter++;
 	}
 }
@@ -378,8 +392,13 @@ int main(int argc, char *argv[]) {
 	// How many best so far fitnesses will be saved per run?
 	bsf_save_per_run = params.max_evaluations / bsf_save_period;
 
-	// Initialize bsf_btw_runs array, set contents to zero
-	bsf_btw_runs = (double *) calloc(bsf_save_per_run * n_runs, sizeof(double));
+	// Initialize bsf_btw_runs matrix, set contents to zero
+	bsf_btw_runs =
+		(double *) calloc(bsf_save_per_run * n_runs, sizeof(double));
+
+	// Initialize bsf_save_evals
+	bsf_save_evals =
+		(unsigned int *) calloc(bsf_save_per_run, sizeof(unsigned int));
 
 	printf("\nRUNS\n----\n");
 
@@ -425,14 +444,19 @@ int main(int argc, char *argv[]) {
 	out = fopen(FILE_BSF_SAVE, "w");
 	for (unsigned int i = 0; i < bsf_save_per_run; i++)
 	{
+		// Evaluation at which best of so far fitness was saved
+		fprintf(out, "%u", bsf_save_evals[i]);
+
+		// Best so far fitness per run
 		for (unsigned int j = 0; j < n_runs; ++j)
 		{
-			fprintf(out, "\t%.40g", (double) bsf_btw_runs[j * bsf_save_per_run + i]);
+			fprintf(out, "\t%.40g", bsf_btw_runs[j * bsf_save_per_run + i]);
 		}
 		fprintf(out, "\n");
 	}
 	fclose(out);
 	free(bsf_btw_runs);
+	free(bsf_save_evals);
 
 	// Save number of evaluations required for getting below stop criterion
 	out = fopen(FILE_EVALS, "w");
