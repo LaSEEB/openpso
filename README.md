@@ -18,7 +18,7 @@ languages, making _OpenPSO_ a flexible and adaptable framework for PSO research.
 
 _OpenPSO_ has been tested with GCC and Clang on Windows and Linux. OpenMP
 support depends on the compiler version, but _OpenPSO_ will work regardless
-(albeit slower without OpenMP support).  
+(albeit slower without OpenMP support).
 
 _OpenPSO_ uses the [CMake] build system, which is able to generate projects for
 different targets, e.g. regular Makefiles, XCode or Eclipse.
@@ -43,6 +43,13 @@ is available [here](input.ini).
 By default, the number of threads used is the same as the number of available
 processors. However, this default can be overridden by setting the
 `OMP_NUM_THREADS` environment to a specific value.
+
+### Reference
+
+If you use this software please cite the following reference:
+
+* Fernandes CM, Fachada N, Merelo J, Rosa AC. (2019). Steady state particle swarm.
+  *PeerJ Computer Science* 5:e202 https://doi.org/10.7717/peerj-cs.202
 
 ### License
 
