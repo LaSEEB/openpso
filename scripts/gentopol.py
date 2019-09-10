@@ -29,8 +29,8 @@ ks = []
 for k in sys.argv[2:]:
     ks.append(int(k))
     # Number of neighbors must be an odd value
-    if ks[-1] % 2 == 0:
-        print("All values of k must be odd")
+    if (ks[-1] % 2 == 0 and ks[-1] < n) or (ks[-1] > n):
+        print("Values of k must be odd and less than n, or be equal to n")
         exit(1)
 
 # Cycle through number of neighbors list
