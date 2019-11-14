@@ -32,7 +32,7 @@ add_definitions("-DMT_GENERATE_CODE_IN_HEADER=0")
 #add_definitions(-DZF_LOG_DEF_LEVEL=1)
 
 # Directories where to find include files
-include_directories(libs/mtwist libs/iniparser libs/zf_log)
+include_directories(libs/mtwist libs/iniparser libs/zf_log libs/mixseed)
 
 # Call CMake on the functions folder
 add_subdirectory(src/functions)

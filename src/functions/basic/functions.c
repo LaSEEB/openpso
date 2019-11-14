@@ -10,16 +10,20 @@
  * @author Nuno Fachada
  */
 
+#ifdef _OPENMP
+	#include <omp.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
 
-#include "fprng.h"
+#include "mixseed.h"
 #include "functions_data.h"
-#include "mtwist.h"
 #include "functions.h"
+//#include "mtwist.h"
+#include "randistrs.h"
 
 /// Pi constant
 #ifndef M_PI
@@ -36,6 +40,30 @@ static const double griewank_m_d2[2][2] = GRIEWANK_M_D2;
 static const double griewank_m_d10[10][10] = GRIEWANK_M_D10;
 static const double griewank_m_d30[30][30] = GRIEWANK_M_D30;
 static const double griewank_m_d50[50][50] = GRIEWANK_M_D50;
+
+/// Reference to thread-safe RNGs
+static mt_state *prng_states;
+
+// Set thread-safe PRNGs
+void Initialize(unsigned int seed)
+{
+	#ifdef _OPENMP
+		unsigned int num_threads = omp_get_max_threads();
+	#else
+		unsigned int num_threads = 1;
+	#endif
+
+	prng_states = (mt_state *) calloc(num_threads, sizeof(mt_state));
+	for (unsigned int i = 0; i < num_threads; ++i) {
+		mts_seed32new(&prng_states[i], mixseed(seed, i));
+	}
+}
+
+// Free thread-safe PRNGs
+void Finalize()
+{
+	free(prng_states);
+}
 
 /// Sphere function
 double Sphere(double *vars, unsigned int nvars) {
@@ -191,6 +219,11 @@ double ShiftedQuadricWithNoise(double *vars, unsigned int nvars) {
 	double sum1 = 0.0;
 	double sum2 = 0.0;
 	float shifted_vars[nvars];
+#ifdef _OPENMP
+	unsigned int tid = omp_get_thread_num();
+#else
+	unsigned int tid = 0;
+#endif
 
 	for (i = 0; i < nvars; ++i) {
 		shifted_vars[i] = vars[i] - o[i];
@@ -203,7 +236,7 @@ double ShiftedQuadricWithNoise(double *vars, unsigned int nvars) {
 		}
 		sum1 += sum2 * sum2;
 	}
-	sum1 = sum1 * (1.0 + 0.4 * fabs(runif01(vars, nvars)));
+	sum1 = sum1 * (1.0 + 0.4 * rds_uniform(&prng_states[tid], 0, 1));
 	return sum1;
 }
 
@@ -233,9 +266,4 @@ double RotatedGriewank(double *vars, unsigned int nvars) {
 	}
 
 	return Griewank(rotated_vars, nvars);
-}
-
-// Basic function used to test the internal noise-generating PRNG
-double Random01(double *vars, unsigned int nvars) {
-	return runif01(vars, nvars);
 }

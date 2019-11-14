@@ -21,6 +21,7 @@
 #include "pso.h"
 #include "randistrs.h"
 #include "zf_log.h"
+#include "mixseed.h"
 
 // When hooks array is full/not initialized, by how much should we increment
 // the hooks array capacity?
@@ -31,37 +32,6 @@ const char *pso_error = NULL;
 
 /// Variables with this structure will hold a fitness/particleID pair.
 struct fit_id { double fit; unsigned int id; };
-
-/**
- * Internal function for hashing PRNG seed with thread ID.
- *
- * @param[in] seed Global PRNG seed.
- * @param[in] tid Thread ID.
- * @return A thread-specific PRNG seed.
- */
-static uint32_t pso_mixseed(uint32_t seed, uint32_t tid) {
-
-	// A different base seed for each thread
-	seed += tid;
-
-	// Hash base seed
-	seed  = (seed + 0x7ed55d16) + (seed << 12);
-	seed  = (seed + 0x165667b1) + (seed << 5);
-	seed  = (seed ^ 0xc761c23c) ^ (seed >> 19);
-	seed  = (seed + 0xd3a2646c) ^ (seed << 9);
-	seed  = (seed + 0xfd7046c5) + (seed << 3);
-	seed  = (seed ^ 0xb55a4f09) ^ (seed >> 16);
-
-	// Hash thread ID
-	tid = (tid ^ 61) ^ (tid >> 16);
-	tid = tid + (tid << 3);
-	tid = tid ^ (tid >> 4);
-	tid = tid * 0x27d4eb2d;
-	tid = tid ^ (tid >> 15);
-
-	// Return mixed seed
-	return seed ^ tid;
-}
 
 /**
  * Validate PSO parameters.
@@ -257,7 +227,7 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 	// Initialize PRNG states
 	pso->prng_states = (mt_state *) calloc(pso->num_threads, sizeof(mt_state));
 	for (unsigned int i = 0; i < pso->num_threads; ++i) {
-		mts_seed32new(&pso->prng_states[i], pso_mixseed(seed, i));
+		mts_seed32new(&pso->prng_states[i], mixseed(seed, i));
 	}
 
 	// Keep population size

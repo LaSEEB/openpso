@@ -408,6 +408,9 @@ int main(int argc, char *argv[]) {
 		// Reset average best so far counter
 		bsf_save_counter = 0;
 
+		// Initialize PRNG states for functions
+		Initialize(prng_seed + r);
+
 		// Initialize PSO for current run
 		pso = pso_new(params , getSelFunc(problem), prng_seed + r);
 		if (!pso) ERROR_EXIT("%s", pso_error);
@@ -438,6 +441,9 @@ int main(int argc, char *argv[]) {
 
 		// Release PSO model for current run
 		pso_destroy(pso);
+
+		// Free PRNG states for functions
+		Finalize();
 	}
 
 	// Save file containing the best so far fitness between runs
