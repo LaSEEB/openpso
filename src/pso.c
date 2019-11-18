@@ -373,7 +373,7 @@ void pso_update_pop_data(PSO *pso) {
 
 	// Reset best and worst fitnesses
 	struct fit_id
-		worst_fitness = { .fit = 0.0, .id = 0 },
+		worst_fitness = { .fit = pso->particles[0].fitness, .id = 0 },
 		best_fitness = { .fit = pso->particles[0].fitness, .id = 0 };
 	double sum_fitness = 0;
 
