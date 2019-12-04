@@ -13,13 +13,14 @@
 #ifndef __PSO_H_
 #define __PSO_H_
 
+#define PSO_PARAMS_MAXSTR 20
+
+#include "common.h"
 #include "mtwist.h"
+#include "watershed.h"
 
 /// If PSO terminates with error, error message will be placed here
 extern const char *pso_error;
-
-/// PSO model
-typedef struct pso PSO;
 
 /// Forward declaration of PSO_PARTICLE
 typedef struct pso_particle PSO_PARTICLE;
@@ -95,6 +96,8 @@ typedef struct {
 	double crit;
 	// Keep going until max_evaluations after stop criterion is meet?
 	int crit_keep_going;
+	// Watershed strategy
+	char watershed_strategy[PSO_PARAMS_MAXSTR];
 
 } PSO_PARAMS;
 
@@ -120,6 +123,7 @@ struct pso {
 	unsigned int pop_size;
 	unsigned int num_threads;
 	pso_func_opt evaluate;
+	pso_watershed watershed;
 
 	PSO_TOPOLOGY topol;
 
@@ -141,6 +145,7 @@ struct pso {
 	double best_fitness;
 	double best_so_far;
 	double worst_fitness;
+	double watershed_min_fitness;
 
 	//double worst_so_far;
 	PSO_PARTICLE *best_so_far_particle;

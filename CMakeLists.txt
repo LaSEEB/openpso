@@ -38,7 +38,7 @@ include_directories(libs/mtwist libs/iniparser libs/zf_log libs/mixseed)
 add_subdirectory(src/functions)
 
 # Create standalone PSO library
-add_library(${PROJECT_NAME} SHARED src/pso.c
+add_library(${PROJECT_NAME} SHARED src/pso.c src/watershed.c
 	src/topol/staticgrid2d.c src/topol/staticring1d.c src/topol/staticgraph.c
 	libs/mtwist/mtwist.c libs/mtwist/randistrs.c libs/zf_log/zf_log.c
 	libs/iniparser/iniparser.c libs/iniparser/dictionary.c)
@@ -47,7 +47,7 @@ add_library(${PROJECT_NAME} SHARED src/pso.c
 set(PSO_EXE_NAME ${PROJECT_NAME}cli)
 
 # Create executable
-add_executable(${PSO_EXE_NAME} src/main.c src/pso.c
+add_executable(${PSO_EXE_NAME} src/main.c src/pso.c src/watershed.c
 	src/topol/staticgrid2d.c src/topol/staticring1d.c src/topol/staticgraph.c
 	libs/mtwist/mtwist.c libs/mtwist/randistrs.c libs/iniparser/iniparser.c
 	libs/iniparser/dictionary.c libs/zf_log/zf_log.c)

@@ -328,6 +328,10 @@ static void parse_params(int argc, char *argv[], PSO_PARAMS *params) {
 	params->crit_keep_going =
 		iniparser_getboolean(ini, "pso:crit_keep_going", -1);
 
+	strncpy(params->watershed_strategy,
+		iniparser_getstring(ini, "pso:watershed_strategy", "none"),
+		PSO_PARAMS_MAXSTR);
+
 	// The following parameters are not directly related with the PSO model,
 	// and their validation is performed here.
 	n_runs = (unsigned int) iniparser_getint(ini, "pso:n_runs", 0);
