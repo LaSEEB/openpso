@@ -18,7 +18,7 @@
 typedef void (*pso_watershed)(PSO *pso);
 
 /// Watershed strategy selection
-pso_watershed pso_watershed_select(const char *strategy);
+void pso_watershed_select(PSO *pso, const char *strategy);
 
 /// Existing functions
 void pso_watershed_worst_so_far(PSO *pso);

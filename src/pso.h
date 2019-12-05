@@ -145,7 +145,7 @@ struct pso {
 	double best_fitness;
 	double best_so_far;
 	double worst_fitness;
-	double watershed_min_fitness;
+	double watershed_max_fitness;
 
 	//double worst_so_far;
 	PSO_PARTICLE *best_so_far_particle;

@@ -189,8 +189,8 @@ static void pso_update_particle_pv(PSO *pso, int a, unsigned int iter) {
 	// Apply watershed strategy, if one was specified
 	if (pso->watershed)
 	{
-		if (pso->particles[a].fitness < pso->watershed_min_fitness)
-			pso->particles[a].fitness = pso->watershed_min_fitness;
+		if (pso->particles[a].fitness > pso->watershed_max_fitness)
+			pso->particles[a].fitness = pso->watershed_max_fitness;
 	}
 
 }
@@ -244,7 +244,7 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 	pso->evaluate = func;
 
 	// Obtain watershed min fitness update strategy
-	pso->watershed = pso_watershed_select(params.watershed_strategy);
+	pso_watershed_select(pso, params.watershed_strategy);
 
 	// Initialize best position vectors
 	pso->best_position_so_far =
@@ -283,9 +283,6 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 		xmax = pso->params.Xmax;
 	}
 
-	// Initialize watershed minimum fitness
-	pso->watershed_min_fitness = DBL_MAX;
-
 	//Initialize position and velocity of each particle
 	for (unsigned int i = 0; i < pso->pop_size; ++i) {
 
@@ -318,8 +315,8 @@ PSO *pso_new(PSO_PARAMS params, pso_func_opt func, unsigned int seed) {
 
 		// Is the fitness worse than the watershed minimum fitness? If so, set
 		// watershed minimum fitness to the particle fitness
-		if (pso->watershed_min_fitness < pso->particles[i].fitness)
-			pso->watershed_min_fitness = pso->particles[i].fitness;
+		if (pso->watershed_max_fitness < pso->particles[i].fitness)
+			pso->watershed_max_fitness = pso->particles[i].fitness;
 
 		// Set my own fitness as best fitness so far
 		pso->particles[i].best_fitness_so_far =
@@ -484,7 +481,7 @@ void pso_update_pop_data(PSO *pso) {
 	// Determine average fitness in the population
 	pso->average_fitness = sum_fitness / pso->pop_size;
 
-	// Update watershed minimum fitness
+	// Update watershed maximum fitness
 	if (pso->watershed)
 	{
 		pso->watershed(pso);
