@@ -191,14 +191,10 @@ static void avg_best_so_far(PSO *pso) {
 	{
 		bsf_btw_runs[r * bsf_save_per_run + bsf_save_counter] =
 			pso->best_so_far;
-		if (r == 0)
-		{
-			bsf_save_evals[bsf_save_counter] = pso->evaluations;
-		}
-		else
-		{
-			assert(bsf_save_evals[bsf_save_counter] == pso->evaluations);
-		}
+
+		// This could de done once at the beginning and not repeatedly for
+		// each run
+		bsf_save_evals[bsf_save_counter] = pso->evaluations;
 
 		bsf_save_counter++;
 	}
